@@ -64,8 +64,7 @@ class ilAdobeConnectUserUtil
 
 	public function ensureAccountExistance()
 	{
-//		$auth_mode = ilAdobeConnectServer::getSetting('auth_mode');
-//		 here we can decide in future if it is needed to check and/or create accounts at an AC-Server or not
+		//here we can decide in future if it is needed to check and/or create accounts at an AC-Server or not
 		
 		$this->ensureLocalAccountExistance();
 
@@ -137,7 +136,6 @@ class ilAdobeConnectUserUtil
 	{
 		// check if this login exists at ac-server  
 		$search = $this->searchUser($this->xavc_login);
-
         // if does not exist, create account at ac-server
 		if(!$search)
 		{
@@ -276,19 +274,6 @@ class ilAdobeConnectUserUtil
 			$xmlAPI->addUser($this->getXAVCLogin(), $this->email, $user_pass, $this->first_name, $this->last_name, $session);
 			$xmlAPI->logout($session);
         }
-		// kkoch: 13.03.2012: die Meldung über das Login eines neuen Nutzers bitte komplett unterdrücken
-		/*
-		 * 
-		 *	include_once("./Services/Mail/classes/class.ilMail.php");
-		 * $subject = $this->txt('new_ac_user_subject');
-		 * $message = $this->txt('new_ac_user_mail');
-		 * 
-		 * $mail = new ilMail(ANONYMOUS_USER_ID);
-		 * $message = $message.' '.$user_pass;
-		 * 
-		 * $mail->sendMail($this->email, '', '', $subject, $message, NULL, array('normal'));
-		 * 
-		 * */
     }
 
 	/**Search user on the Adobe Connect server

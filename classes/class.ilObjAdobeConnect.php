@@ -52,6 +52,25 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	private $instructions = NULL;
 
 	/**
+	 * Meeting language
+	 * @var String
+	**/
+	private $meeting_lang = Null;
+
+	/**
+         * Max Participants
+         * @var String
+        **/
+        private $max_pax = 0;
+
+	/**
+         * Current Participants
+         * @var String
+        **/
+        private $current_pax = 0;
+
+
+	/**
 	 * @var null
 	 * 
 	 */
@@ -205,8 +224,20 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		/**
 		 * @var $ilCtrl ilCtrl
 		 */
-		global $ilCtrl;
+		global $ilCtrl, $tree;
 		$cmdClass = $ilCtrl->getCmdClass();
+
+		$ref_id = $_GET['ref_id'];
+		$node_data = $tree->getNodeData($ref_id);
+
+		if ($node_data['type'] != 'crs' && $node_data['type'] != 'grp'
+			&& !$tree->checkForParentType($ref_id, 'crs') && !$tree->checkForParentType($ref_id, 'grp')) {
+			$this->creationRollback();
+			throw new ilException('not_in_course_or_group');
+			return;
+		}
+
+
 
 		if(isset($_POST['tpl_id']) && (int)$_POST['tpl_id'] > 0)
 		{
@@ -289,6 +320,9 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		{
 			$this->setPermission(ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED);
 		}
+
+		$this->setMeetingLang($_POST['meeting_lang']);
+		$this->setMaxPax($_POST['max_pax']);
 		 
 		$this->pluginObj->includeClass('class.ilXAVCPermissions.php');
 		$this->setReadContents(ilXAVCPermissions::lookupPermission(AdobeConnectPermissions::PERM_READ_CONTENTS, 'view'));
@@ -318,6 +352,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				$this->getPermission(),
 				$this->getReadContents(),
 				$this->getReadRecords(),
+				$this->getMeetingLang(),
+				$this->getMaxPax(),
 				$this->getFolderId()
 			);
 
@@ -373,6 +409,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				$this->getPermission(),
 				$this->getReadContents(),
 				$this->getReadRecords(),
+				$this->getMeetingLang(),
+				$this->getMaxPax(),
 				$this->getFolderId()
 			);
 
@@ -440,16 +478,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 					$session
 				);
 		}
-//// @todo delete old meeting-participants ?
-//		$oldParticipants = $this->xmlApi->getMeetingsParticipants($sco_id, $session);
-//		foreach($oldParticipants as $oP)
-//		{
-//			$this->deleteParticipant($oP['login']);
-//		}
 
 		$this->xmlApi->updateMeetingParticipant($sco_id, $this->externalLogin, $session, 'host');
-
-//		$this->xmlApi->setMeetingPublic($sco_id);
 		
 		$start_date = time();
 		$end_date = strtotime('+2 hours');			
@@ -482,18 +512,15 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 * @throws ilException
 	 */
 
-	public function publishCreationAC($obj_id, $title, $description, $start_date, $end_date, $instructions, $contact_info, $permanent_room, $access_level = ACCESS_LEVEL_PROTECTED, $read_contents, $read_records, $folder_id )
+	public function publishCreationAC($obj_id, $title, $description, $start_date, $end_date, $instructions, $contact_info, $permanent_room, $access_level = ACCESS_LEVEL_PROTECTED, $read_contents, $read_records, $meeting_lang, $max_pax, $folder_id )
 	{
-		/**
-		 * @var $ilDB   ilDB
-		 * */
 		global $ilDB;
 
 		$owner_id = ilObject::_lookupOwner($obj_id);
 		$ownerObj = new ilObjUser($owner_id); 
 		
 		// receive breeze session
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession(false, true);
 		if(!$session)
 		{
 			throw new ilException('xavc_connection_error');
@@ -507,20 +534,20 @@ class ilObjAdobeConnect extends ilObjectPlugin
 
 		// receive folder id
 		$this->externalLogin = $this->checkExternalUser($ownerObj->getId());
-		
+
 		$folder_id = $this->getFolderIdByLogin($this->externalLogin);
-		
+
 		if(!$folder_id)
 		{
 			throw new ilException('xavc_folder_not_available');
 		}
-
+		
 		$obj_title_suffix_enabled = ilAdobeConnectServer::getSetting('obj_title_suffix');
 		if($obj_title_suffix_enabled)
 		{
 			$title = $title.'_'.CLIENT_ID.'_'.$obj_id;
-		}	
-		
+		}
+
 		// create meeting room
 		$arr_meeting = $this->xmlApi->addMeeting
 			(
@@ -530,6 +557,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				date('H:i', $start_date->getUnixTime()),
 				date('Y-m-d', $end_date->getUnixTime()),
 				date('H:i', $end_date->getUnixTime()),
+				$meeting_lang,
 				$folder_id,
 				$session
 			);
@@ -541,6 +569,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		{
 			throw new ilException('xavc_meeting_creation_error');
 		}
+
 
 		if(ilAdobeConnectServer::getSetting('user_assignment_mode') != ilAdobeConnectServer::ASSIGN_USER_SWITCH)
 		{
@@ -586,6 +615,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				'permanent_room' => array('integer', (int)$permanent_room),
 				'perm_read_contents' => array('integer', (int) $this->getReadContents()),
 				'perm_read_records' => array('integer', (int) $this->getReadRecords()),
+				'meeting_lang' => array('text', $meeting_lang),
+				'max_pax' => array('text', $max_pax),
 				'folder_id'  => array('integer', $folder_id),
 				'url_path' => array('text',$meeting_url)
 				)
@@ -597,199 +628,188 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 * @param integer $sco_id
 	 * @param array   $member_ids
 	 */
-	public function addCrsGrpMembers($ref_id, $sco_id, $member_ids = null)
-	{
-		global $tree;
-		$parent_crs_ref = $tree->checkForParentType($ref_id, 'crs');
-		$parent_grp_ref = $tree->checkForParentType($ref_id, 'grp');
-		$node_data = $tree->getNodeData($ref_id);
-		$parent_ref = $node_data['parent'];
+	 public function addCrsGrpMembers($ref_id, $sco_id, $member_ids = null)
+        {
+                global $tree;
 
-		$type   = null;
-		$obj_id = 0;
+                $parent_crs_ref = $tree->checkForParentType($ref_id, 'crs');
+                $parent_grp_ref = $tree->checkForParentType($ref_id, 'grp');
+                $type   = null;
+                $obj_id = 0;
 
-		if($parent_crs_ref && $parent_crs_ref == $parent_ref)
-		{
-			$obj_id = ilObject::_lookupObjectId($parent_crs_ref);
-			include_once 'Modules/Course/classes/class.ilCourseParticipants.php';
-			$oParticipants = ilCourseParticipants::_getInstanceByObjId($obj_id);
-			$type          = 'crs';
-		}
-		else if($parent_grp_ref && $parent_grp_ref == $parent_ref)
-		{
-			$obj_id = ilObject::_lookupObjectId($parent_grp_ref);
-			include_once 'Modules/Group/classes/class.ilGroupParticipants.php';
-			$oParticipants = ilGroupParticipants::_getInstanceByObjId($obj_id);
-			$type          = 'grp';
-		}
+                if($parent_crs_ref && empty($parent_grp_ref))
+                {
+                        $obj_id = ilObject::_lookupObjectId($parent_crs_ref);
+                        include_once 'Modules/Course/classes/class.ilCourseParticipants.php';
+                        $oParticipants = ilCourseParticipants::_getInstanceByObjId($obj_id);
+                        $type          = 'crs';
+                }
+                else if($parent_grp_ref)
+                {
+                        $obj_id = ilObject::_lookupObjectId($parent_grp_ref);
+                        include_once 'Modules/Group/classes/class.ilGroupParticipants.php';
+                        $oParticipants = ilGroupParticipants::_getInstanceByObjId($obj_id);
+                        $type          = 'grp';
+                }
 
-		if(!in_array($type, array('crs', 'grp')))
-		{
-			return;
-		}
+                if($type == 'crs' || $type == 'grp')
+                {
+                        $role_map = ilAdobeConnectServer::getRoleMap();
 
-		$role_map = ilAdobeConnectServer::getRoleMap();
+                        $owner_id = ilObject::_lookupOwner(ilObject::_lookupObjectId($ref_id));
 
-		/** @var $oParticipants  ilGroupParticipants | ilCourseParticipants */
-		$admins  = $oParticipants->getAdmins();
-		$tutors  = $oParticipants->getTutors();
-		$members = $oParticipants->getMembers();
+                        /** @var $oParticipants  ilGroupParticipants | ilCourseParticipants */
+                        $admins  = $oParticipants->getAdmins();
+                        $tutors  = $oParticipants->getTutors();
+                        $members = $oParticipants->getMembers();
 
-		if(is_array($member_ids) && count($member_ids) > 0)
-		{
-			$all_participants = $member_ids;
+                        if(is_array($member_ids) && count($member_ids) > 0)
+                        {
+                                $all_participants = $member_ids;
 
-			$admins  = array_uintersect($member_ids, $admins, 'strcmp');
-			$tutors  = array_uintersect($member_ids, $tutors, 'strcmp');
-			$members = array_uintersect($member_ids, $members, 'strcmp');
-		}
-		else
-		{
-			$all_participants = array_unique(array_merge($admins, $tutors, $members));
-		}
+                                $admins  = array_uintersect($member_ids, $admins, 'strcmp');
+                                $tutors  = array_uintersect($member_ids, $tutors, 'strcmp');
+                                $members = array_uintersect($member_ids, $members, 'strcmp');
+                        }
+                        else
+                        {
+                                $all_participants = array_unique(array_merge($admins, $tutors, $members));
+                        }
 
-		$this->pluginObj->includeClass('class.ilAdobeConnectRoles.php');
-		$xavcRoles = new ilAdobeConnectRoles($ref_id);
 
-		if(ilAdobeConnectServer::getSetting('user_assignment_mode') != ilAdobeConnectServer::ASSIGN_USER_SWITCH)
-		{
-			foreach($all_participants as $user_id)
-			{
-				$this->pluginObj->includeClass('class.ilAdobeConnectUserUtil.php');
+                        $this->pluginObj->includeClass('class.ilAdobeConnectRoles.php');
+                        $xavcRoles = new ilAdobeConnectRoles($ref_id);
 
-				//check if there is an adobe connect account at the ac-server
-				$ilAdobeConnectUser = new ilAdobeConnectUserUtil($user_id);
-				$ilAdobeConnectUser->ensureAccountExistance();
+                        if(ilAdobeConnectServer::getSetting('user_assignment_mode') != ilAdobeConnectServer::ASSIGN_USER_SWITCH)
+                        {
+                                foreach($all_participants as $user_id)
+                                {
+                                        $this->pluginObj->includeClass('class.ilAdobeConnectUserUtil.php');
 
-				// add to desktop
-				if(ilAdobeConnectServer::getSetting('add_to_desktop') == 1)
-				{
-					ilObjUser::_addDesktopItem($user_id, $ref_id, 'xavc');
-				}
-			}
-		}
+                                        //check if there is an adobe connect account at the ac-server
+                                        $ilAdobeConnectUser = new ilAdobeConnectUserUtil($user_id);
+                                        $ilAdobeConnectUser->ensureAccountExistance();
 
-		// receive breeze session
-		$session = $this->xmlApi->getBreezeSession();
+                                        // add to desktop
+                                        if(ilAdobeConnectServer::getSetting('add_to_desktop') == 1)
+                                        {
+                                                ilObjUser::_addDesktopItem($user_id, $ref_id, 'xavc');
+                                        }
+                                }
+                        }
 
-		$this->pluginObj->includeClass('class.ilXAVCMembers.php');
+                        // receive breeze session
+                        $session = self::getSession();
 
-		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
-		{
-			foreach($admins as $user_id)
-			{
-				if($user_id == $this->getOwner())
-				{
-					continue;
-				}
+                        $this->pluginObj->includeClass('class.ilXAVCMembers.php');
 
-				$xavcRoles->addAdministratorRole($user_id);
+                        if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+                        {
+                                foreach($admins as $user_id)
+                                {
+                                        $xavcRoles->addAdministratorRole($user_id);
 
-				$is_member = ilXAVCMembers::_isMember($user_id, $ref_id);
-				// local member table
-				$xavcMemberObj = new ilXAVCMembers($ref_id, $user_id);
+                                        $is_member = ilXAVCMembers::_isMember($user_id, $ref_id);
+                                        // local member table
+                                        $xavcMemberObj = new ilXAVCMembers($ref_id, $user_id);
 
-				$status = $role_map[$type . '_admin'];
+                                        $status = $role_map[$type . '_admin'];
 
-				$xavcMemberObj->setStatus($status);
-				$xavcMemberObj->setScoId($sco_id);
+                                        $xavcMemberObj->setStatus($status);
+                                        $xavcMemberObj->setScoId($sco_id);
 
-				if($is_member)
-				{
-					$xavcMemberObj->updateXAVCMember();
-				}
-				else
-				{
-					$xavcMemberObj->insertXAVCMember();
-				}
+                                        if($is_member)
+                                        {
+                                                $xavcMemberObj->updateXAVCMember();
+                                        }
+                                        else
+                                        {
+                                                $xavcMemberObj->insertXAVCMember();
+                                        }
 
-				$this->xmlApi->updateMeetingParticipant($sco_id, ilXAVCMembers::_lookupXAVCLogin($user_id), $session, $status);
-			}
+					                              $xavc_login=ilXAVCMembers::_lookupXAVCLogin($user_id);
+					                              if (!empty($xavc_login)) {
+	                                        $this->xmlApi->updateMeetingParticipant($sco_id, $xavc_login, $session, $status);
+					                              }
+                                }
 
-			foreach($tutors as $user_id)
-			{
-				if($user_id == $this->getOwner())
-				{
-					continue;
-				}
+                                foreach($tutors as $user_id)
+                                {
+                                        if (($xavc_login = ilXAVCMembers::_lookupXAVCLogin($user_id)) != $this->adminLogin && $user_id != $owner_id) {
+                                                $xavcRoles->addAdministratorRole($user_id);
 
-				$xavcRoles->addAdministratorRole($user_id);
+                                                $is_member = ilXAVCMembers::_isMember($user_id, $ref_id);
+                                                // local member table
+                                                $xavcMemberObj = new ilXAVCMembers($ref_id, $user_id);
 
-				$is_member = ilXAVCMembers::_isMember($user_id, $ref_id);
-				// local member table
-				$xavcMemberObj = new ilXAVCMembers($ref_id, $user_id);
+                                                $status = $role_map[$type . '_tutor'];
 
-				$status = $role_map[$type . '_tutor'];
+                                                $xavcMemberObj->setStatus($status);
+                                                $xavcMemberObj->setScoId($sco_id);
 
-				$xavcMemberObj->setStatus($status);
-				$xavcMemberObj->setScoId($sco_id);
+                                                if($is_member)
+                                                {
+                                                        $xavcMemberObj->updateXAVCMember();
+                                                }
+                                                else
+                                                {
+                                                        $xavcMemberObj->insertXAVCMember();
+                                                }
+						                                    if (!empty($xavc_login)) {
+	                                                $this->xmlApi->updateMeetingParticipant($sco_id, $xavc_login, $session, $status);
+					                                     	}
+                                        }
+                                }
 
-				if($is_member)
-				{
-					$xavcMemberObj->updateXAVCMember();
-				}
-				else
-				{
-					$xavcMemberObj->insertXAVCMember();
-				}
+                                foreach($members as $user_id)
+                                {
+                                        if (($xavc_login = ilXAVCMembers::_lookupXAVCLogin($user_id)) != $this->adminLogin  && $user_id != $owner_id) {
+                                                $xavcRoles->addMemberRole($user_id);
+                                                $is_member = ilXAVCMembers::_isMember($user_id, $ref_id);
+                                                // local member table
+                                                $xavcMemberObj = new ilXAVCMembers($ref_id, $user_id);
 
-				$this->xmlApi->updateMeetingParticipant($sco_id, ilXAVCMembers::_lookupXAVCLogin($user_id), $session, $status);
-			}
+                                                $status = $role_map[$type . '_member'];
 
-			foreach($members as $user_id)
-			{
-				if($user_id == $this->getOwner())
-				{
-					continue;
-				}
+                                                $xavcMemberObj->setStatus($status);
+                                                $xavcMemberObj->setScoId($sco_id);
 
-				$xavcRoles->addMemberRole($user_id);
-				$is_member = ilXAVCMembers::_isMember($user_id, $ref_id);
-				// local member table
-				$xavcMemberObj = new ilXAVCMembers($ref_id, $user_id);
+                                                if($is_member)
+                                                {
+                                                        $xavcMemberObj->updateXAVCMember();
+                                                }
+                                                else
+                                                {
+                                                        $xavcMemberObj->insertXAVCMember();
+                                                }
+						if (!empty($xavc_login)) {
+	                                                $this->xmlApi->updateMeetingParticipant($sco_id, $xavc_login, $session, $status);
+						}
+                                        }
+                                }
 
-				$status = $role_map[$type . '_member'];
+                                $xavcRoles->addAdministratorRole($owner_id);
 
-				$xavcMemberObj->setStatus($status);
-				$xavcMemberObj->setScoId($sco_id);
+                                // local member table
+                                $xavcMemberObj = new ilXAVCMembers($ref_id, $owner_id);
+                                $status = $role_map[$type . '_owner'];
+                                $xavcMemberObj->setStatus($status);
+                                $xavcMemberObj->setScoId($sco_id);
 
-				if($is_member)
-				{
-					$xavcMemberObj->updateXAVCMember();
-				}
-				else
-				{
-					$xavcMemberObj->insertXAVCMember();
-				}
+                                $is_member = ilXAVCMembers::_isMember($owner_id, $ref_id);
 
-				$this->xmlApi->updateMeetingParticipant($sco_id, ilXAVCMembers::_lookupXAVCLogin($user_id), $session, $status);
-			}
-
-			$owner_id = ilObject::_lookupOwner($obj_id);
-
-			$xavcRoles->addAdministratorRole($owner_id);
-
-			$is_member = ilXAVCMembers::_isMember($owner_id, $ref_id);
-			// local member table
-			$xavcMemberObj = new ilXAVCMembers($ref_id, $owner_id);
-
-			$status = $role_map[$type . '_owner'];
-			$xavcMemberObj->setStatus($status);
-
-			$xavcMemberObj->setScoId($sco_id);
-
-			if($is_member)
-			{
-				$xavcMemberObj->updateXAVCMember();
-			}
-			else
-			{
-				$xavcMemberObj->insertXAVCMember();
-			}
-
-			$this->xmlApi->updateMeetingParticipant($sco_id, ilXAVCMembers::_lookupXAVCLogin($owner_id), $session, $status);
-		}
-	}
+                                if($is_member)
+                                {
+                                        $xavcMemberObj->updateXAVCMember();
+                                }
+                                else
+                                {
+                                        $xavcMemberObj->insertXAVCMember();
+                                }
+                                $this->xmlApi->updateMeetingParticipant($sco_id, ilXAVCMembers::_lookupXAVCLogin($owner_id), $session, $status);
+                        }
+                }
+        }
 
 	public function deleteCrsGrpMembers($sco_id, $delete_user_ids)
 	{
@@ -803,6 +823,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			foreach($delete_user_ids as $usr_id)
 			{
 				$xavcRoles->detachMemberRole($usr_id);
+        $xavcRoles->detachAdministratorRole($usr_id);
 
 				ilXAVCMembers::deleteXAVCMember($usr_id, $this->getRefId());
 				$xavc_login = ilXAVCMembers::_lookupXAVCLogin($usr_id);
@@ -850,16 +871,13 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$this->read_records   = $rec['perm_read_records'];
 			$this->folder_id	  = $rec['folder_id'];
 			$this->url            = $rec['url_path'];
+			$this->setMeetingLang($rec['meeting_lang']);
+			$this->setMaxPax($rec['max_pax']);
 		}
 
-		if($this->sco_id == NULL)
-		{
-			#$this->ilias->raiseError($this->lng->txt("err_no_valid_sco_id_given"),$this->ilias->error_obj->MESSAGE);
-		}
-
-		$session = $this->xmlApi->getBreezeSession();
-
-		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+		$session = self::getSession(true);
+		
+		if($this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			//only read url via api, if url in database is empty
 			if(!$this->url)
@@ -874,7 +892,12 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$end_date = new ilDateTime(strtotime($date_end_string), IL_CAL_UNIX);
 			$this->end_date = $end_date;
 			$unix_duration  = $end_date->getUnixTime() - $this->start_date->getUnixTime();
-			
+			$this->setCurrentPax($this->xmlApi->getCurrentPax($this->sco_id, $session));
+
+			if (!$this->getMeetingLang()) {
+				$this->meeting_lang = $this->xmlApi->getMeetingLang($this->sco_id, $session);
+			}
+
 			$hours          = floor($unix_duration / 3600);
 			$minutes        = floor(($unix_duration - $hours * 3600) / 60);
 			$this->duration = array("hours" => $hours, "minutes" => $minutes);
@@ -896,18 +919,18 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		 */
 		global $ilDB;
 
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			$end_date = new ilDateTime($this->start_date->getUnixTime() + $this->duration["hours"] * 3600 + $this->duration["minutes"] * 60, IL_CAL_UNIX);
 			$this->xmlApi->updateMeeting($this->sco_id, $this->getTitle(), $this->getDescription(),
 				date('Y-m-d', $this->start_date->getUnixTime()), date('H:i', $this->start_date->getUnixTime()),
-				date('Y-m-d', $end_date->getUnixTime()), date('H:i', $end_date->getUnixTime()), $session);
+				date('Y-m-d', $end_date->getUnixTime()), date('H:i', $end_date->getUnixTime()), $this->getMeetingLang(), $session);
 
 			$this->xmlApi->updatePermission($this->sco_id, $session,  $this->permission);
 		}
-		
+
 		$ilDB->update('rep_robj_xavc_data',
 			array(
 				'start_date'     => array('integer', $this->getStartdate()->getUnixTime()),
@@ -916,7 +939,9 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				'contact_info'   => array('text', $this->getContactInfo()),
 				'permanent_room' => array('integer', $this->getPermanentRoom()),
 				'perm_read_contents'=> array('integer', $this->getReadContents()),
-				'perm_read_records' => array('integer', $this->getReadRecords())
+				'perm_read_records' => array('integer', $this->getReadRecords()),
+				'meeting_lang' => array('text', $this->getMeetingLang()),
+				'max_pax' => array('integer', $this->getMaxPax())
 			),
 			array('sco_id' => array('integer', $this->getScoId())));
 
@@ -932,7 +957,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		 */
 		global $ilDB;
 
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession(true);
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			$this->xmlApi->deleteMeeting($this->sco_id, $session);
@@ -966,7 +991,6 @@ class ilObjAdobeConnect extends ilObjectPlugin
 
 		$now              = new ilDateTime(time(), IL_CAL_UNIX);
 		$this->start_date = new ilDateTime($now->getUnixTime() - 7200, IL_CAL_UNIX);
-		//$this->start_date = new ilDateTime(0, IL_CAL_UNIX);
 		$this->duration = array('hours' => 1, 'minutes' => 0);
 
 		$new_obj->setStartDate($this->getStartDate());
@@ -977,6 +1001,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$new_obj->setReadContents($this->getReadContents());
 		$new_obj->setReadRecords($this->getReadRecords());
 		$new_obj->setDuration($this->getDuration());
+		$new_obj->setMeetingLang($this->getMeetingLang());
+		$new_obj->setMaxPax($this->getMaxPax());
 		$new_obj->setURL($this->getURL());
 		$new_obj->setScoId($this->getScoId());
 		$new_obj->setFolderId($this->getFolderId());
@@ -1128,6 +1154,61 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	}
 
 	/**
+         * @param String Two letter language code
+         */
+	public function setMeetingLang($meeting_lang)
+	{
+		$this->meeting_lang = $meeting_lang;	
+	}
+
+        /**
+         * @return String Two letter language code
+         */
+	public function getMeetingLang()
+	{
+		return $this->meeting_lang;
+	}
+
+        /**
+         * @param integer max number of participants
+         */
+	public function setMaxPax($max_pax)
+        {
+			if ($max_pax == 0 || !isset($max_pax) || $max_pax == '') {
+				$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+				$settings = ilAdobeConnectServer::_getInstance();
+				$settings->getSetting('max_pax') ? $max_pax = $settings->getSetting('max_pax') : $max_pax = 200;
+			}
+				
+            $this->max_pax = $max_pax;
+        }
+
+        /**
+         * @return integer max number of participants
+         */
+        public function getMaxPax()
+        {
+                return $this->max_pax;
+        }
+
+	/**
+         * @param integer number of current participants in meeting
+         */
+        public function setCurrentPax($current_pax)
+        {
+                $this->current_pax = $current_pax;
+        }
+
+        /**
+         * @return integer number of current participants in meeting
+         */
+        public function getCurrentPax()
+        {
+                return $this->current_pax;
+        }
+
+
+	/**
 	 * @param null $contact_info
 	 */
 	public function setContactInfo($contact_info)
@@ -1231,7 +1312,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function readContents($by_type = NULL)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		$ids = array();
 
@@ -1330,6 +1411,23 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		return $contents[0];
 	}
 
+	 /**
+         *  Returns the content associated with the identifier
+         * @param String $sco_id
+         * @return ilAdobeConnectContent
+         */
+        public function changeContentVisibility($sco_id, $permission)
+        {
+		$session = self::getSession();
+		$this->xmlApi->changeContentVisibility($sco_id, $session, $permission);
+        }
+	
+	public function addPassword($sco_id, $passwd)
+	{
+		$session = self::getSession();
+                $this->xmlApi->addPassword($sco_id, $session, $passwd);
+	}
+
 	/**
 	 *  Adds a content to the Adobe Connect server
 	 * @param String $title
@@ -1339,7 +1437,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function addContent($title = "untitled", $description = "")
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1356,7 +1454,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function updateContent($sco_id, $title, $description)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1391,17 +1489,17 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			return $this->xmlApi->uploadContent($sco_id, $session);
 	}
 
-	/*
+	/**
 	*   Participants functions
 	*/
-
+	
 	/**
 	 *  Returns meeting hosts
 	 * @return array
 	 */
 	public function getParticipants()
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1420,7 +1518,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function addParticipant($login)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		//check if adobe connect account exists
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
@@ -1432,22 +1530,37 @@ class ilObjAdobeConnect extends ilObjectPlugin
 
 
     /**
-     *  Add a new participant to the meeting
+     * Update switch participant at login if needed
      * @param String $login
-     * @param String $status
-     *
-     * @return boolean Returns true if everything is ok
+     * @return String access-rights of user
+     * 
      */
-    public function addSwitchParticipant($login,$status)
+    public function updateSwitchParticipant($adobe_login_name)
     {
-	    $session = $this->xmlApi->getBreezeSession();
-        $participant = $this->xmlApi->updateMeetingParticipantByTechnicalUser($this->getScoId(), $login, $session, $status);
-        return $participant;
+		global $ilUser;
+		$this->pluginObj->includeClass('class.ilXAVCMembers.php');
+
+		$user_id = $ilUser->getId();
+        $ref_id = $this->getRefId();
+        $status = ilXAVCMembers::_lookupStatus($user_id, $ref_id);
+		if (ilXAVCMembers::_lookupXAVCLogin($user_id) != $adobe_login_name) {
+			$member = new ilXAVCMember($ref_id, $user_id);
+			$member->updateXAVCMember();
+		}
+
+		$session = $this->xmlApi->getBreezeSession();
+
+		if ($status != $this->xmlApi->getMeetingPermission($adobe_login_name, $this->sco_id, $session)) {
+			if (empty($status)) $status = 'remove';
+			$this->xmlApi->updateMeetingParticipantByTechnicalUser($this->getScoId(), $adobe_login_name, $session, $status);
+		}
+	
+		return $this->xmlApi->getMeetingPermission($adobe_login_name, $this->sco_id, $session);
     }
 
 	public function updateParticipant($login, $permission)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1475,15 +1588,35 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function isParticipant($login)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		global $ilUser;
+		$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+        	$settings = ilAdobeConnectServer::_getInstance();
 
-		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+		if ($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
+			$this->pluginObj->includeClass('class.ilXAVCMembers.php');
+			return ilXAVCMembers::_isMember($ilUser->getId(), $this->getRefId());
+		} else {
+			$session = $this->xmlApi->getBreezeSession();
+
+			if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 			return $this->xmlApi->isParticipant($login, $this->sco_id, $session);
+		}
+	}
+
+	/**
+	* @param string Adobe Login Name
+	*
+	* @return integer Principal Id
+	*/
+	public function getPrincipalId($login) {
+		$session = self::getSession();
+
+                return $this->xmlApi->getPrincipalId($login, $session);
 	}
 
 	public function getPermissionId()
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1491,6 +1624,17 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		}
 		return $permission;
 	}
+
+	public function getContentPermissionId($sco_id)
+        {
+                $session = self::getSession();
+
+                if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+                {
+                        $permission = $this->xmlApi->getPermissionId($sco_id, $session);
+                }
+                return $permission;
+        }
 
 
 	// LOCAL ROLES FOR ILIAS
@@ -1664,7 +1808,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function getContentIconAttribute($sco_id)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = self::getSession();
 
 		$icons = array();
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
@@ -1672,6 +1816,42 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$icons[] = $this->xmlApi->getContentIconAttribute($sco_id, $this->sco_id, $session);
 		}
 		return $icons;
+	}
+
+	/**
+	* Returns the Adobe User name of the current user on a switch server
+	* @return mixed string with Adobe user name or the xml response object, if something went wrong
+	**/
+	
+	public function getCurrentUserSwitchUserName ()
+	{
+		return $this->xmlApi->getCurrentUserSwitchUserName();
+	}
+
+	/**
+	* Returns a session variable, needed to avoid login at open on SwitchAAI-Installations
+	* @return string with session id, false if SwitchAAI and no session and NULL if non 
+	*	  SwitchAAI and error creating session.
+	*/
+
+	private function getSession($forceAdmin = false, $forceUser = false)
+	{
+		$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+                $settings = ilAdobeConnectServer::_getInstance();
+
+		$session = 'false';
+
+                if ($forceUser == true || $settings->getAuthMode() != ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
+                        $session = $this->xmlApi->getBreezeSession();
+                } else if (!forceAdmin) {
+                        $session = $this->xmlApi->checkBreezeSession();
+                }
+
+		if ($session == 'false' && $settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
+	                $session = $this->xmlApi->login($this->adminLogin, $this->adminPass);
+                }
+
+		return $session;
 	}
 }
 ?>

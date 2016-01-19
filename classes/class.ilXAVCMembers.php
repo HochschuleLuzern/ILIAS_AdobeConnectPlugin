@@ -174,7 +174,6 @@ class ilXAVCMembers
 		 *
 		 */
 		global $ilDB;
-
 		$ilDB->manipulateF('
 			DELETE FROM rep_robj_xavc_members
 			WHERE user_id = %s

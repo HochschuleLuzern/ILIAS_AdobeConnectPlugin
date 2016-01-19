@@ -86,8 +86,8 @@ class ilXAVCParticipantsDataProvider extends ilAdobeConnectTableDatabaseDataProv
 
 			$fields = array(
 				'user_id',
-				'firstname',
 				'lastname',
+				'firstname',
 				'login',
 				'email',
 				'xavc_status'
@@ -107,7 +107,7 @@ class ilXAVCParticipantsDataProvider extends ilAdobeConnectTableDatabaseDataProv
 				throw new InvalidArgumentException('Please provide a valid order direction.');
 			}
 
-			return $params['order_field'] . ' ' . $params['order_direction'];
+                        return $params['order_field'] . ' ' . $params['order_direction'];
 		}
 
 		return '';

@@ -288,7 +288,25 @@ fold_create_xavc#:#Create Adobe Meeting
 root_create_xavc#:#Create Adobe Meeting
 cat_create_xavc#:#Create Adobe Meeting
 perm_edit_records#:#Edit and delete records
-ac_user#:#Adobe Connect User
-ilias_user#:#ILIAS User
+ac_user#:#Adobe Connect Benutzer
+ilias_user#:#ILIAS Benutzer
 obj_title_suffix#:#Create Meeting room name with an unique suffix
-obj_title_suffix_info#:If activated, a suffix will be added to the meeting room name (i.e.: room_name/client_id/_/object_id/). Ilias shows the object-title without suffix. 
+obj_title_suffix_info#:#If activated, a suffix will be added to the meeting room name (i.e.: room_name/client_id/_/object_id/). Ilias shows the object-title without suffix. 
+make_hosts#:#Change to hosts
+make_moderators#:#Change to moderators
+make_participants#:#change to participants
+make_blocked#:#Block
+not_in_course_or_group#:#The Adobe Room can not be created, as rooms need to be inside a course or a group.
+langs#:#Available Languages
+langs_info#:#Please enter a commaseparated list of abreviations of the languages available on the Adobe Connect Server (e.g. "en" or "es"). The first language will be used as default.
+meeting_lang#:#Language of the meeting
+make_public#:#Create Link for direct Access
+make_private#:#Delete Link for direct Access
+is_public#:#This content is publicly available at: 
+max_pax#:#Maximal Number of Concurrent Participants
+max_pax_desc#:#Switch has licences for a maximum of 200 participants. It is not recommended to have rooms that big. Please contact Switch if you expect more then 100 participants.
+max_pax_settings_desc#:#Specifies how many concurrent users can be in a room. Switch has licences for a maximum of 200 participants. If the maximum number is reached the meeting link is hidden and a corrsponding message is shown.
+meeting_full#:#The maximum capacity of this room has been reached.
+admins_only#:# (Only visible to administrators)
+max_size_error#:#The maximum number of concurrent participants is: 
+no_access#:#You are not allowed to access this room.
