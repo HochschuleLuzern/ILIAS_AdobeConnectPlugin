@@ -370,7 +370,6 @@ class ilAdobeConnectServer
 				array('text'), array($a_keyword));
 
 			$row = $ilDB->fetchAssoc($res);
-
 			return $row['value'];
 		}
 

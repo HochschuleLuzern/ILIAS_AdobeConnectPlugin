@@ -156,9 +156,9 @@ class ilAdobeConnectContentTableGUI extends ilTable2GUI
 		foreach($a_set as $key => $value)
 		{			
 			$value = $this->formatCellValue($key, array($key => $value));
+
 			if(array_key_exists($key, $this->optionalColumns))
 			{
-
 				if(!$this->isColumnVisible($key))
 				{
 					continue;

@@ -164,7 +164,7 @@ class ilAdobeConnectDfnXMLAPI extends ilAdobeConnectXMLAPI
 		 * @var $ilLog ilLog
 		 */
 		global $ilLog, $lng;
-		
+
 		if(isset(self::$loginsession_cache[$session]))
 		{
 			return true;
@@ -225,4 +225,4 @@ class ilAdobeConnectDfnXMLAPI extends ilAdobeConnectXMLAPI
 	{
 		return $this->searchUser($login, $session);
 	}
-} 
+}

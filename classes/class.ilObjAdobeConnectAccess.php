@@ -31,7 +31,7 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 		 * @var $ilUser         ilObjUser
 		 * @var $ilObjDataCache ilObjectDataCache
 		 */
-		global $ilUser, $ilObjDataCache;
+		global $ilUser, $ilObjDataCache, $rbacsystem;
 
 		if(!$a_user_id)
 		{
@@ -109,6 +109,7 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 		global $rbacreview;
 
 		$roles  = $rbacreview->getRoleListByObject($a_ref_id);
+
 		$result = false;
 
 		foreach($roles as $role)

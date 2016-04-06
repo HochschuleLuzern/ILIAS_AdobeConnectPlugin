@@ -59,7 +59,7 @@ class ilXAVCPermissions
 	public static function hasAccess($user_id, $ref_id, $permission)
 	{
 		global $ilDB;
-		
+
 		//lookupRole
 		$res = $ilDB->queryF('
 			SELECT has_access FROM rep_robj_xavc_members mem
@@ -69,12 +69,11 @@ class ilXAVCPermissions
 			array('integer', 'integer', 'text'), array($user_id, $ref_id, $permission));
 		
 		$access = false;
-		
+
 		while($row = $ilDB->fetchAssoc($res))
 		{
 			$access = (bool)$row['has_access'];
 		}
-		
 		return (bool)$access;
 	}
 
