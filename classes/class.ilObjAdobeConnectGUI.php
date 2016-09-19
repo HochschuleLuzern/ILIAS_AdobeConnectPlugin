@@ -1041,7 +1041,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 					$action = new ilAdvancedSelectionListGUI();
 					$action->setId('asl_' . $content_id . mt_rand(1, 50));
 					$action->setListTitle($this->lng->txt('actions'));
-					if ($permission == 'remove') {
+					if ($permission == 'remove'  || $permission == 'view-denied') {
                     	$action->addItem($this->txt('make_public'), '', $this->ctrl->getLinkTarget($this, 'makePublic'));
                     } else {
                      	$action->addItem($this->txt('make_private'), '', $this->ctrl->getLinkTarget($this, 'makePrivate'));
