@@ -2703,8 +2703,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				$afi_add_method     = 'addSubItem';
 			}
 
-    	$advanced_form_item->{$afi_add_method}($title);
-			$advanced_form_item->addSubItem($description);
+    		$advanced_form_item->{$afi_add_method}($title);
+			$advanced_form_item->{$afi_add_method}($description);
 
 			$contact_info = new ilTextAreaInputGUI($this->pluginObj->txt("contact_information"), "contact_info");
 			$contact_info->setRows(self::CREATION_FORM_TA_ROWS);
