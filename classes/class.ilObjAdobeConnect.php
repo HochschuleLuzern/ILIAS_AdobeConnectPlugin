@@ -321,8 +321,17 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$this->setPermission(ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED);
 		}
 
-		$this->setMeetingLang($_POST['meeting_lang']);
-		$this->setMaxPax($_POST['max_pax']);
+		if (strlen($_POST['meeting_lang']) > 0) {
+			$this->setMeetingLang($_POST['meeting_lang']);
+		} else if ($langs = ilAdobeConnectServer::getSetting('langs')) {
+			$this->setMeetingLang(trim(explode(",", $langs)[0]));			
+		}
+		
+		if (strlen($_POST['max_pax']) > 0) {
+			$this->setMaxPax($_POST['max_pax']);
+		} else if (($max_pax = ilAdobeConnectServer::getSetting('max_pax')) > 0) {
+			$this->setMaxPax($max_pax);
+		}
 		 
 		$this->pluginObj->includeClass('class.ilXAVCPermissions.php');
 		$this->setReadContents(ilXAVCPermissions::lookupPermission(AdobeConnectPermissions::PERM_READ_CONTENTS, 'view'));
