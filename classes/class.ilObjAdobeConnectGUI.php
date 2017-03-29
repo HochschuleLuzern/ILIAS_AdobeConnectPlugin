@@ -2705,17 +2705,17 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
     		$advanced_form_item->{$afi_add_method}($title);
 			$advanced_form_item->{$afi_add_method}($description);
+			
+			$instructions = new ilTextAreaInputGUI($this->lng->txt('exc_instruction'), 'instructions');
+			$instructions->setRows(self::CREATION_FORM_TA_ROWS);
+			$instructions->setCols(self::CREATION_FORM_TA_COLS);
+			$advanced_form_item->{$afi_add_method}($instructions);
 
 			$contact_info = new ilTextAreaInputGUI($this->pluginObj->txt("contact_information"), "contact_info");
 			$contact_info->setRows(self::CREATION_FORM_TA_ROWS);
 			$contact_info->setCols(self::CREATION_FORM_TA_COLS);
 			$contact_info->setValue($contact_info_value);
 			$advanced_form_item->{$afi_add_method}($contact_info);
-
-			$instructions = new ilTextAreaInputGUI($this->lng->txt('exc_instruction'), 'instructions');
-			$instructions->setRows(self::CREATION_FORM_TA_ROWS);
-			$instructions->setCols(self::CREATION_FORM_TA_COLS);
-			$advanced_form_item->{$afi_add_method}($instructions);
 
 			if($template_settings['access_level']['hide'] == 0)
 			{
@@ -2761,6 +2761,11 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		{
 			$form->addItem($title);
 			$form->addItem($description);
+			
+			$instructions_2 = new ilTextAreaInputGUI($this->lng->txt('exc_instruction'), 'instructions_2');
+			$instructions_2->setRows(self::CREATION_FORM_TA_ROWS);
+			$instructions_2->setCols(self::CREATION_FORM_TA_COLS);
+			$form->addItem($instructions_2);
 
 			$contact_info_2 = new ilTextAreaInputGUI($this->pluginObj->txt("contact_information"), "contact_info_2");
 			$contact_info_2->setRows(self::CREATION_FORM_TA_ROWS);
@@ -2773,10 +2778,6 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				$form->addItem($radio_access_level);
 			}
 
-			$instructions_2 = new ilTextAreaInputGUI($this->lng->txt('exc_instruction'), 'instructions_2');
-			$instructions_2->setRows(self::CREATION_FORM_TA_ROWS);
-			$instructions_2->setCols(self::CREATION_FORM_TA_COLS);
-			$form->addItem($instructions_2);
 			if($permanent_room_is_enabled)
 			{
 				$info_text =  $this->pluginObj->txt('smpl_permanent_room_enabled');
