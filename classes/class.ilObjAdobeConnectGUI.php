@@ -1933,7 +1933,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				# curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
 				curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 				curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
-				curl_setopt($curl, CURLOPT_POSTFIELDS, array('file' => '@' . $target.'/'.$fdata['name']));
+				curl_setopt($curl, CURLOPT_POSTFIELDS, array('file[]' => '@' . $target.'/'.$fdata['name']));
 				$postResult = curl_exec($curl);
 				curl_close($curl);
 
@@ -2196,7 +2196,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		    #curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
 		    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 		    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
-		    curl_setopt($curl, CURL_UPLOAD, true);
+		    curl_setopt($curl, CURLOPT_UPLOAD, true);
 		    curl_setopt($curl, CURLOPT_POSTFIELDS, array('name'=> $object_title, 'file'=>'@'.$file));
 		    $postResult = curl_exec($curl);
 
