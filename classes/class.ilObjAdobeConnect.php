@@ -1553,7 +1553,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
         $ref_id = $this->getRefId();
         $status = ilXAVCMembers::_lookupStatus($user_id, $ref_id);
 		if (ilXAVCMembers::_lookupXAVCLogin($user_id) != $adobe_login_name) {
-			$member = new ilXAVCMember($ref_id, $user_id);
+			ilXAVCMembers::addXAVCUser($user_id, $adobe_login_name);
+			$member = new ilXAVCMembers($ref_id, $user_id);
 			$member->updateXAVCMember();
 		}
 
