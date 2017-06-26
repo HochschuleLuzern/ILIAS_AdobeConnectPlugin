@@ -176,6 +176,12 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$form_lead_time->setSize(5);
 		$form_lead_time->setInfo($this->getPluginObject()->txt('schedule_lead_time_info'));
 		$this->form->addItem($form_lead_time);
+		
+		//Choose available languages
+		$form_langs = new ilTextInputGUI($this->getPluginObject()->txt('langs'), 'langs');
+		$form_langs->setInfo($this->getPluginObject()->txt('langs_info'));
+		$form_langs->setRequired(true);
+		$this->form->addItem($form_langs);
 
 		$head_line = new ilFormSectionHeaderGUI();
 		$head_line->setTitle($this->getPluginObject()->txt('presentation_server_settings'));
@@ -208,6 +214,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$values['password'] = ilAdobeConnectServer::getSetting('password')? ilAdobeConnectServer::getSetting('password') : '';
 		$values['cave'] = ilAdobeConnectServer::getSetting('cave')? ilAdobeConnectServer::getSetting('cave') : '';
 		$values['schedule_lead_time'] = ilAdobeConnectServer::getSetting('schedule_lead_time')? ilAdobeConnectServer::getSetting('schedule_lead_time') : 0;
+		$values['langs'] = ilAdobeConnectServer::getSetting('langs')? ilAdobeConnectServer::getSetting('langs') : 'en';
 
 		ilAdobeConnectServer::getSetting('user_assignment_mode')
 			? $values['user_assignment_mode'] = ilAdobeConnectServer::getSetting('user_assignment_mode')
@@ -274,6 +281,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 					'cave' => null,
 					'user_assignment_mode' => null,
 					'schedule_lead_time' => null,
+					'langs' => null,
 					'presentation_server' => null,
 					'presentation_port' => null
 				);
@@ -402,10 +410,12 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$this->form->addCommandButton('saveRoomAllocation', $lng->txt('save'));
 		$this->form->addCommandButton('cancelRoomAllocation', $lng->txt('cancel'));
 
-		/*$form_numVC = new ilNumberInputGUI($this->getPluginObject()->txt('adobe_num_max_vc'), 'num_max_vc');
-		$form_numVC->setRequired(true);
-		$form_numVC->setSize(5);
-		$this->form->addItem($form_numVC);*/
+		$form_max_pax = new ilNumberInputGUI($this->getPluginObject()->txt('max_pax'), 'max_pax');
+		$form_max_pax->setInfo($this->getPluginObject()->txt('max_pax_settings_desc'));
+		$form_max_pax->allowDecimals(false);
+		$form_max_pax->setSize(5);
+		$form_max_pax->setRequired(true);
+		$this->form->addItem($form_max_pax);
 
 		$form_ac_obj = new ilNumberInputGUI($this->getPluginObject()->txt('ac_interface_objects'), 'ac_interface_objects');
 		$form_ac_obj->setInfo($this->getPluginObject()->txt('enter_number_of_scos'));
@@ -435,6 +445,8 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		
 		$values['ac_interface_objects_buffer'] = ilAdobeConnectServer::getSetting('ac_interface_objects_buffer') 
 				? ilAdobeConnectServer::getSetting('ac_interface_objects_buffer'): 0;
+		
+		$values['max_pax'] = ilAdobeConnectServer::getSetting('max_pax')? ilAdobeConnectServer::getSetting('max_pax') : 200;
 
 		$this->form->setValuesByArray($values);
 	}
@@ -473,6 +485,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 			$max_num_vc        = (int)$this->form->getInput('num_max_vc');
 			$num_ac_obj        = (int)$this->form->getInput('ac_interface_objects');
 			$num_ac_obj_buffer = $this->form->getInput('ac_interface_objects_buffer');
+			$max_pax		   = $this->form->getInput('max_pax');
 
 			$sum = $num_ac_obj + $num_ac_obj_buffer;
 			/*if((int)$num_ac_obj > 0 && $sum > $max_num_vc)
@@ -486,6 +499,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 			ilAdobeConnectServer::setSetting('num_max_vc', $this->form->getInput('num_max_vc'));
 			ilAdobeConnectServer::setSetting('ac_interface_objects', $num_ac_obj);
 			ilAdobeConnectServer::setSetting('ac_interface_objects_buffer', $num_ac_obj_buffer);
+			ilAdobeConnectServer::setSetting('max_pax', $max_pax);
 
 			ilUtil::sendSuccess($this->getPluginObject()->txt('extt_adobe_room_allocation_saved'), true);
 			$ilCtrl->redirect($this, 'editRoomAllocation');
@@ -520,7 +534,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$tpl->setContent($this->form->getHTML());
 	}
 	
-	public function initIliasSettingsForm()
+	private function initIliasSettingsForm()
 	{
 		/**
 		 * @var $ilCtrl ilCtrl

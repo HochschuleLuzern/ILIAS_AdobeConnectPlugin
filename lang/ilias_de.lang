@@ -305,3 +305,12 @@ use_meeting_template#:#Veranstaltungsvorlage verwenden
 use_meeting_template_info#:#Wenn dies aktiviert ist, kann eine existierende Veranstaltungsvorlage ausgewählt werden, die bei der Erstellung verwendet werden kann.
 shared_meeting_templates#:#Gemeinsame Vorlagen
 my_meeting_templates#:#Meine Vorlagen
+cave#:#SWITCH AAI URL
+langs#:#Verfügbare Sprachen
+langs_info#:#Bitte eine kommagetrennte Liste der Kürzel der auf dem Adobe Connect Server verfügbaren Sprachen eingeben (z.B. "de" oder "en"). Die erste Sprache wird als Standardsprache verwendet.
+meeting_lang#:#Sprache des Meetings
+max_pax#:#Maximale Teilnehmerzahl
+max_pax_desc#:#Bei Switch liegt die maximal mögliche Zahl von gleichzeitigen Teilnehmer/innen bei 200. Es ist nicht sinnvoll diese Zahl voll auszureizen. Bitte kontaktieren Sie Switch, wenn Sie mehr als 100 Teilnehmer/innen erwarten.
+max_pax_settings_desc#:#Gibt an, wieviel TN sich maximal in einem Raum befinden können. Bei Switch liegt die maximal mögliche Zahl von gleichzeitigen Teilnehmer/innen bei 200. Sobald die Zahl erreicht ist, wird der Meeting-Link ausgeblendet und eine entsprechende Nachricht angezeigt.
+meeting_full#:#In diesem Sitzungsraum wurde die maximale Teilnehmerzahl erreicht. 
+max_size_error#:#Die maximal mögliche Teilnehmerzahl ist:

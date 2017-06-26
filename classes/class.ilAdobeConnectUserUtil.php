@@ -281,19 +281,6 @@ class ilAdobeConnectUserUtil
 			$xmlAPI->addUser($this->getXAVCLogin(), $this->email, $user_pass, $this->first_name, $this->last_name, $session);
 			$xmlAPI->logout($session);
         }
-		// kkoch: 13.03.2012: die Meldung über das Login eines neuen Nutzers bitte komplett unterdrücken
-		/*
-		 * 
-		 *	include_once("./Services/Mail/classes/class.ilMail.php");
-		 * $subject = $this->txt('new_ac_user_subject');
-		 * $message = $this->txt('new_ac_user_mail');
-		 * 
-		 * $mail = new ilMail(ANONYMOUS_USER_ID);
-		 * $message = $message.' '.$user_pass;
-		 * 
-		 * $mail->sendMail($this->email, '', '', $subject, $message, NULL, array('normal'));
-		 * 
-		 * */
     }
 
 	/**Search user on the Adobe Connect server
