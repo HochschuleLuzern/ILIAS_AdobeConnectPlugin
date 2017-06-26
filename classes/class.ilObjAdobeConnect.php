@@ -50,6 +50,24 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 * @var String
 	 */
 	private $instructions = NULL;
+	
+	/**
+	 * Meeting language
+	 * @var String
+	 **/
+	private $meeting_lang = Null;
+	
+	/**
+	 * Max Participants
+	 * @var String
+	 **/
+	private $max_pax = 0;
+	
+	/**
+	 * Current Participants
+	 * @var String
+	 **/
+	private $current_pax = 0;
 
 	/**
 	 * @var null
@@ -296,6 +314,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				$this->getPermission(),
 				$this->getReadContents(),
 				$this->getReadRecords(),
+				$this->getMeetingLang(),
+				$this->getMaxPax(),
 				$this->getFolderId()
 			);
 			
@@ -385,6 +405,18 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$this->setPermission(ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED);
 		}
 		
+		if (strlen($_POST['meeting_lang']) > 0) {
+			$this->setMeetingLang($_POST['meeting_lang']);
+		} else if ($langs = ilAdobeConnectServer::getSetting('langs')) {
+			$this->setMeetingLang(trim(explode(",", $langs)[0]));
+		}
+		
+		if (strlen($_POST['max_pax']) > 0) {
+			$this->setMaxPax($_POST['max_pax']);
+		} else if (($max_pax = ilAdobeConnectServer::getSetting('max_pax')) > 0) {
+			$this->setMaxPax($max_pax);
+		}
+		
 		$this->pluginObj->includeClass('class.ilXAVCPermissions.php');
 		$this->setReadContents(ilXAVCPermissions::lookupPermission(AdobeConnectPermissions::PERM_READ_CONTENTS, 'view'));
 		$this->setReadRecords(ilXAVCPermissions::lookupPermission(AdobeConnectPermissions::PERM_READ_RECORDS, 'view'));
@@ -450,6 +482,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				$this->getPermission(),
 				$this->getReadContents(),
 				$this->getReadRecords(),
+				$this->getMeetingLang(),
+				$this->getMaxPax(),
 				$this->getFolderId()
 			);
 
@@ -547,11 +581,12 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 * @param string $access_level
 	 * @param integer $read_contents
 	 * @param integer $read_records
+	 * @param string $meeting_lang
+	 * @param integer $max_pax
 	 * @param integer $folder_id
 	 * @throws ilException
 	 */
-
-	public function publishCreationAC($obj_id, $title, $description, $start_date, $end_date, $instructions, $contact_info, $permanent_room, $access_level = self::ACCESS_LEVEL_PROTECTED, $read_contents, $read_records, $folder_id )
+	public function publishCreationAC($obj_id, $title, $description, $start_date, $end_date, $instructions, $contact_info, $permanent_room, $access_level = self::ACCESS_LEVEL_PROTECTED, $read_contents, $read_records, $meeting_lang, $max_pax, $folder_id )
 	{
 		/**
 		 * @var $ilDB   ilDB
@@ -605,6 +640,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				date('H:i', $start_date->getUnixTime()),
 				date('Y-m-d', $end_date->getUnixTime()),
 				date('H:i', $end_date->getUnixTime()),
+				$meeting_lang,
 				$folder_id,
 				$session,
 				$source_sco_id
@@ -662,6 +698,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				'permanent_room' => array('integer', (int)$permanent_room),
 				'perm_read_contents' => array('integer', (int) $this->getReadContents()),
 				'perm_read_records' => array('integer', (int) $this->getReadRecords()),
+				'meeting_lang' => array('text', $meeting_lang),
+				'max_pax' => array('text', $max_pax),
 				'folder_id'  => array('integer', $folder_id),
 				'url_path' => array('text',$meeting_url)
 				)
@@ -903,6 +941,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$this->read_records   = $rec['perm_read_records'];
 			$this->folder_id	  = $rec['folder_id'];
 			$this->url            = $rec['url_path'];
+			$this->setMeetingLang($rec['meeting_lang']);
+			$this->setMaxPax($rec['max_pax']);
 		}
 
 		if($this->sco_id == NULL)
@@ -931,6 +971,12 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$hours          = floor($unix_duration / 3600);
 			$minutes        = floor(($unix_duration - $hours * 3600) / 60);
 			$this->duration = array("hours" => $hours, "minutes" => $minutes);
+			
+			$this->setCurrentPax($this->xmlApi->getCurrentPax($this->sco_id, $session));
+			
+			if (!$this->getMeetingLang()) {
+				$this->meeting_lang = $this->xmlApi->getMeetingLang($this->sco_id, $session);
+			}
 
 			$this->pluginObj->includeClass('class.ilAdobeConnectContents.php');
 			$this->contents = new ilAdobeConnectContents();
@@ -957,7 +1003,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$end_date = new ilDateTime($this->start_date->getUnixTime() + $this->duration["hours"] * 3600 + $this->duration["minutes"] * 60, IL_CAL_UNIX);
 			$this->xmlApi->updateMeeting($this->sco_id, $this->getTitle(), $this->getDescription(),
 				date('Y-m-d', $this->start_date->getUnixTime()), date('H:i', $this->start_date->getUnixTime()),
-				date('Y-m-d', $end_date->getUnixTime()), date('H:i', $end_date->getUnixTime()), $session);
+					date('Y-m-d', $end_date->getUnixTime()), date('H:i', $end_date->getUnixTime()), $this->getMeetingLang(), $session);
 
 			$this->xmlApi->updatePermission($this->sco_id, $session,  $this->permission);
 		}
@@ -970,7 +1016,9 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				'contact_info'   => array('text', $this->getContactInfo()),
 				'permanent_room' => array('integer', $this->getPermanentRoom()),
 				'perm_read_contents'=> array('integer', $this->getReadContents()),
-				'perm_read_records' => array('integer', $this->getReadRecords())
+				'perm_read_records' => array('integer', $this->getReadRecords()),
+				'meeting_lang' => array('text', $this->getMeetingLang()),
+				'max_pax' => array('integer', $this->getMaxPax())
 			),
 			array('sco_id' => array('integer', $this->getScoId())));
 
@@ -1027,6 +1075,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$new_obj->setReadContents($this->getReadContents());
 		$new_obj->setReadRecords($this->getReadRecords());
 		$new_obj->setDuration($this->getDuration());
+		$new_obj->setMeetingLang($this->getMeetingLang());
+		$new_obj->setMaxPax($this->getMaxPax());
 		$new_obj->setURL($this->getURL());
 		$new_obj->setScoId($this->getScoId());
 		$new_obj->setFolderId($this->getFolderId());
@@ -1267,6 +1317,60 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$end_date->increment(ilDateTime::HOUR, $this->duration["hours"]);
 		$end_date->increment(ilDateTime::MINUTE, $this->duration["minutes"]);
 		return $end_date;
+	}
+	
+	/**
+	 * @param String Two letter language code
+	 */
+	public function setMeetingLang($meeting_lang)
+	{
+		$this->meeting_lang = $meeting_lang;
+	}
+	
+	/**
+	 * @return String Two letter language code
+	 */
+	public function getMeetingLang()
+	{
+		return $this->meeting_lang;
+	}
+	
+	/**
+	 * @param integer max number of participants
+	 */
+	public function setMaxPax($max_pax)
+	{
+		if ($max_pax == 0 || !isset($max_pax) || $max_pax == '') {
+			$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+			$settings = ilAdobeConnectServer::_getInstance();
+			$settings->getSetting('max_pax') ? $max_pax = $settings->getSetting('max_pax') : $max_pax = 200;
+		}
+		
+		$this->max_pax = $max_pax;
+	}
+	
+	/**
+	 * @return integer max number of participants
+	 */
+	public function getMaxPax()
+	{
+		return $this->max_pax;
+	}
+	
+	/**
+	 * @param integer number of current participants in meeting
+	 */
+	public function setCurrentPax($current_pax)
+	{
+		$this->current_pax = $current_pax;
+	}
+	
+	/**
+	 * @return integer number of current participants in meeting
+	 */
+	public function getCurrentPax()
+	{
+		return $this->current_pax;
 	}
 
 	/*

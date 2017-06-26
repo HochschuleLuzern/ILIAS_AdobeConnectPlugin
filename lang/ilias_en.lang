@@ -299,3 +299,12 @@ use_meeting_templates#:#Use meeting templates
 use_meeting_templates_info#:#If aktivated, an existing meeting template can be selected for meeting room creation.
 shared_meeting_templates#:#Shared Templates
 my_meeting_templates#:#My Templates
+cave#:#SWITCH AAI URL
+langs#:#Available Languages
+langs_info#:#Please enter a commaseparated list of abreviations of the languages available on the Adobe Connect Server (e.g. "en" or "es"). The first language will be used as default.
+meeting_lang#:#Language of the meeting
+max_pax#:#Maximal Number of Concurrent Participants
+max_pax_desc#:#Switch has licences for a maximum of 200 participants. It is not recommended to have rooms that big. Please contact Switch if you expect more then 100 participants.
+max_pax_settings_desc#:#Specifies how many concurrent users can be in a room. Switch has licences for a maximum of 200 participants. If the maximum number is reached the meeting link is hidden and a corrsponding message is shown.
+meeting_full#:#The maximum capacity of this room has been reached.
+max_size_error#:#The maximum number of concurrent participants is:

@@ -615,3 +615,22 @@ $ilDB->insert('rep_robj_xavc_gloperm',
 			  'role' => array('text', 'denied'),
 			  'has_access' =>array('integer', 0)));
 ?>
+<#36>
+<?php
+if(!$ilDB->tableColumnExists('rep_robj_xavc_data', 'meeting_lang'))
+{
+        $ilDB->addTableColumn('rep_robj_xavc_data', 'meeting_lang',
+                array('type' => 'text',
+                        'length' => 80,
+                        'notnull' => false,
+                        'default' => null));
+}
+if(!$ilDB->tableColumnExists('rep_robj_xavc_data', 'max_pax'))
+{
+        $ilDB->addTableColumn('rep_robj_xavc_data', 'max_pax',
+                array('type' => 'integer',
+                        'length' => 8,
+                        'notnull' => true,
+                        'default' => 0));
+}
+?>

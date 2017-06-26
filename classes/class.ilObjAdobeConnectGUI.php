@@ -427,6 +427,30 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 		$this->form->addItem($cb_uploads);
 		$this->form->addItem($cb_records);
+		
+		
+		$settings = ilAdobeConnectServer::_getInstance();
+		
+		$available_langs = $settings->getSetting('langs');
+		
+		if ($available_langs == '' || $available_langs == NULL) {
+			$available_langs = ['en'];
+		} else {
+			$available_langs = array_map ('trim', explode(',', $available_langs));
+		}
+		$meeting_lang = new ilSelectInputGUI($this->pluginObj->txt('meeting_lang'), 'meeting_lang');
+		$meeting_lang->setOptions($available_langs);
+		$meeting_lang->setRequired(true);
+		$this->form->addItem($meeting_lang);
+		
+		$max_allowed_pax = $settings->getSetting('max_pax');
+		if (empty($max_allowed_pax)) $max_allowed_pax = 200;
+		
+		$max_pax = new ilNumberInputGUI($this->pluginObj->txt('max_pax'), 'max_pax');
+		$max_pax->setInfo($this->pluginObj->txt('max_pax_desc'));
+		$max_pax->allowDecimals(false);
+		$max_pax->setMaxValue($max_allowed_pax);
+		$this->form->addItem($max_pax);
 
 		$this->form->addCommandButton("updateProperties", $this->txt("save"));
 		$this->form->addCommandButton("editProperties", $this->txt("cancel"));
@@ -472,6 +496,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 		$values['read_contents'] = $this->object->getReadContents();
 		$values['read_records'] = $this->object->getReadRecords();
+		$values['meeting_lang'] = $this->object->getMeetingLang();
+		$values['max_pax'] =  $this->object->getMaxPax();
 
 		$this->form->setValuesByArray($values);
 	}
@@ -538,6 +564,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 			$this->object->setReadContents((int)$this->form->getInput('read_contents'));
 			$this->object->setReadRecords((int)$this->form->getInput('read_records'));
+			$this->object->setMeetingLang($this->form->getInput('meeting_lang'));
+			$this->object->setMaxPax($this->form->getInput('max_pax'));
 
 			$access_level = ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED;
 			if(in_array($this->form->getInput('access_level'), array(ilObjAdobeConnect::ACCESS_LEVEL_PRIVATE , ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED, ilObjAdobeConnect::ACCESS_LEVEL_PUBLIC)))
@@ -1635,7 +1663,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 			$this->object->updateParticipant(ilXAVCMembers::_lookupXAVCLogin($a_user_id),ilXAVCMembers::_lookupStatus($a_user_id, $this->object->getRefId()));
 			ilUtil::sendInfo($this->pluginObj->txt('is_already_participant'));
 		}
-	}
+    }
 
     /**
      *
@@ -2405,6 +2433,18 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		$radio_access_level->addOption($opt_public);
 		$radio_access_level->setValue( ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED);
 		
+		$available_langs = $settings->getSetting('langs');
+		
+		if ($available_langs == '' || $available_langs == NULL) {
+			$available_langs = ['en'];
+		} else {
+			$available_langs = array_map('trim', explode(",", $available_langs));
+		}
+		
+		$meeting_lang = new ilSelectInputGUI($this->pluginObj->txt('meeting_lang'), 'meeting_lang');
+		$meeting_lang->setOptions($available_langs);
+		$meeting_lang->setRequired(true);
+		
 		$this->pluginObj->includeClass('class.ilAdobeConnectUserUtil.php');
 		$ilAdobeConnectUser = new ilAdobeConnectUserUtil($this->user->getId());
 		$ilAdobeConnectUser->ensureAccountExistance();
@@ -2468,6 +2508,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 			}
 			$advanced_form_item->{$afi_add_method}($radio_time_type);
 			$advanced_form_item->{$afi_add_method}($owner);
+			$advanced_form_item->{$afi_add_method}($meeting_lang);
 
 			if($free_scos && $radio_existing)
 			{
@@ -3194,10 +3235,19 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				if(($this->object->getPermanentRoom() == 1 || $this->doProvideAccessLink())
 				&& $this->object->isParticipant($xavc_login))
 				{
+					$this->pluginObj->includeClass('class.ilAdobeConnectRoles.php');
+					$xavcRoles = new ilAdobeConnectRoles($this->object->getRefId());
+
 					if(!$quota->mayStartScheduledMeeting($this->object->getScoId()))
 					{
 						$href = $this->txt("meeting_not_available_no_slots");
 						$button_disabled = true;
+					}
+					else if (!$xavcRoles->isAdministrator($this->user->getId()) && count($current_pax = $this->object->getCurrentPax()) > $this->object->getMaxPax() 
+						&& !in_array($this->object->getPrincipalId($xavc_login), $current_pax))
+					{
+						$href = $this->txt("meeting_full");
+                                                $button_disabled = true;						
 					}
 					else
 					{

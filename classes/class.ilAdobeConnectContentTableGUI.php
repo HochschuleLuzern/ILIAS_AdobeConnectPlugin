@@ -139,7 +139,6 @@ class ilAdobeConnectContentTableGUI extends ilTable2GUI
 	 */
 	protected function formatCellValue($column, array $row)
 	{
-		
 		if($column == 'date_created')
 		{
 			return ilDatePresentation::formatDate(new ilDateTime($row['date_created'], IL_CAL_UNIX));

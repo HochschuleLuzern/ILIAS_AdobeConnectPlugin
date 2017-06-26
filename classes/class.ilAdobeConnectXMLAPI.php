@@ -353,12 +353,13 @@ class ilAdobeConnectXMLAPI
      * @param String $start_time      Meeting start time
      * @param String $end_date        Meeting end date
      * @param String $end_time        Meeting end time
+     * @param String $end_time        Meeting lang
      * @param String $folder_id       Sco-id of the user's meetings folder
      * @param String $session         Session id
      * @return array                  Meeting sco-id AND Meeting url-path; NULL if something is wrong
      * @throws ilException
      */
-    public function addMeeting($name, $description, $start_date, $start_time, $end_date, $end_time, $folder_id, $session, $source_sco_id = 0)
+    public function addMeeting($name, $description, $start_date, $start_time, $end_date, $end_time, $meeting_lang, $folder_id, $session, $source_sco_id = 0)
     {
 		global $ilLog;
 	
@@ -366,6 +367,7 @@ class ilAdobeConnectXMLAPI
 		    'action' 		=> 'sco-update',
 		    'type' 			=> 'meeting',
 		    'name'			=> $name,
+			'lang'			=> $meeting_lang,
 		    'folder-id' 	=> $folder_id,
 		    'description' 	=> $description,
 		    'date-begin' 	=> $start_date."T".$start_time,
@@ -415,10 +417,11 @@ class ilAdobeConnectXMLAPI
      * @param String $start_time
      * @param String $end_date
      * @param String $end_time
+     * @param String $lang
      * @param String $session
      * @return boolean              Returns true if everything is ok
      */
-    public function updateMeeting($meeting_id, $name, $description, $start_date, $start_time, $end_date, $end_time, $session)
+    public function updateMeeting($meeting_id, $name, $description, $start_date, $start_time, $end_date, $end_time, $lang, $session)
     {
 		global $lng, $ilLog;
 
@@ -429,6 +432,7 @@ class ilAdobeConnectXMLAPI
 			'description' 	=> $description,
 			'date-begin' 	=> $start_date."T".$start_time,
 			'date-end' 		=> $end_date."T".$end_time,
+			'lang'			=> $lang,
 			'session' 		=> $session
 		));
 		$xml = simplexml_load_file($url);
@@ -733,10 +737,7 @@ class ilAdobeConnectXMLAPI
 			{
 				foreach($sco->attributes() as $name => $attr)
 				{
-					//if($sco['active-participants'] >= 1)
-					//{
-						$result[$counter][(string)$name] = (string)$attr;
-					//}
+					$result[$counter][(string)$name] = (string)$attr;
 				}
 
 				$result[$counter]['name'] = (string)$sco->name;
@@ -1082,6 +1083,42 @@ class ilAdobeConnectXMLAPI
             return $ids;
         }
         return NULL;
+    }
+    
+    /**
+     *  Gets meeting or content language
+     *
+     * @param String $sco_id
+     * @param String $folder_id
+     * @param String $session
+     * @return String Meeting or Content language, or NULL if something went wrong
+     */
+    public function getMeetingLang($sco_id, $session)
+    {
+    	global $ilLog;
+    	
+    	$url = $this->getApiUrl(array(
+    			'action' => 'sco-info',
+    			'sco-id' => $sco_id,
+    			'session' => $session
+    	));
+    	
+    	$xml = $this->getCachedSessionCall($url);
+    	
+    	if ($xml->status['code']=="ok")
+    	{
+    		return (string)$xml->sco['lang'];
+    	}
+    	else
+    	{
+    		$ilLog->write('AdobeConnect getName Request: '.$url);
+    		if($xml)
+    		{
+    			$ilLog->write('AdobeConnect getName Response: ' . $xml->asXML());
+    		}
+    		
+    		return NULL;
+    	}
     }
 
     /**
@@ -1501,16 +1538,6 @@ class ilAdobeConnectXMLAPI
 		{
 			return true;
 		}
-//		//deactivated for switch to avoid failure-message 
-//		else
-//		{
-//			$ilLog->write('AdobeConnect updateMeetingParticipant Request: '.$url);
-//			$ilLog->write('AdobeConnect updateMeetingParticipant Response: '.$xml->asXML());
-//
-//		#	ilUtil::sendFailure($lng->txt('add_user_failed'));
-//
-//			return false;
-//		}
 	}
 
     /**
@@ -2054,6 +2081,72 @@ class ilAdobeConnectXMLAPI
 			}
 		}
 		return $icon;
+	}
+	
+	/**
+	 * @param string adobe id of the meeting room
+	 * @param string session
+	 *
+	 * @return int number of pax currently in the room or NULL if something went wrong
+	 **/
+	
+	public function getCurrentPax($sco_id, $session)
+	{
+		global $ilLog;
+		
+		$url = $this->getApiUrl(array(
+				'action' => 'report-meeting-sessions',
+				'sco-id' => $sco_id,
+				'session' => $session
+		));
+		
+		$xml = $this->getCachedSessionCall($url);
+		
+		$sessions = $xml->{'report-meeting-sessions'}->row;
+		$asset_id = (string)$sessions[count($sessions)-1]['asset-id'];
+		
+		$url = $this->getApiUrl(array(
+				'action' => 'report-meeting-session-users',
+				'sco-id' => $sco_id,
+				'asset-id' => $asset_id,
+				'session' => $session
+		));
+		
+		$xml = $this->getCachedSessionCall($url);
+		
+		if ($xml->status['code']=="ok")
+		{
+			$users = $xml->{'report-meeting-session-users'}->row;
+			$total_users = count($users);
+			$current_users = 0;
+			$principal_ids = [];
+			foreach ($users as $user) {
+				if (in_array((string)$user['principal-id'], $principal_ids)) {
+					continue;
+				}
+				else if (isset($user->{'date-end'}))
+				{
+					if (time() - strtotime($user->{'date-end'}) < 300) {
+						array_push($principal_ids, (string)$user['principal-id']);
+					}
+				}
+				else
+				{
+					array_push($principal_ids, (string)$user['principal-id']);
+				}
+			}
+			
+			return $principal_ids;
+		}
+		else
+		{
+			$ilLog->write('AdobeConnect getCurrentPax Request: '.$url);
+			if($xml)
+			{
+				$ilLog->write('AdobeConnect getCurrentPax Response: ' . $xml->asXML());
+			}
+		}
+		return NULL;	
 	}
 	
 	/**
