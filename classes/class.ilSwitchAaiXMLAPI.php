@@ -86,10 +86,12 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
      *  Logs in user on the Adobe Connect server.
      *
      *  With SWITCHaai we use this login only to log in the technical user!
+     *  
+     *  Parameters are only passed for compliance
      *
      * @return string $technical_user_session
      */
-	public function login()
+	public function login($user='', $pass='', $session='')
 	{
 		global $lng, $ilLog;
 
@@ -97,11 +99,26 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		{
 			return self::$technical_user_session;
 		}
+		else if($session != '' && isset(self::$loginsession_cache[$session]))
+		{
+			self::$technical_user_session = self::$loginsession_cache[$session];
+			return self::$technical_user_session;
+		}
+
 		$instance = ilAdobeConnectServer::_getInstance();
 
         $params['action'] = 'login';
-        $params['login'] = $instance->getLogin();
-        $params['password'] = $instance->getPasswd();
+        if ($user == '') {
+	        $params['login'] = $instance->getLogin();
+        } else {
+	    	$params['login'] = $user;
+	    }
+	    
+	    if ($pass == '') {
+	        $params['password'] = $instance->getPasswd();
+	    } else {
+	    	$params['password'] = $pass;
+	    }
 
         $api_url = self::getApiUrl($params);
 
@@ -134,7 +151,7 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 * @param String $type            Used for SWITCHaai meeting|content|...
 	 * @return String                 Meeting or content URL, or NULL if something is wrong
 	 */
-	public function getURL($sco_id, $folder_id, $session, $type)
+	public function getURL($sco_id, $folder_id, $session, $type = '')
 	{
 		global $ilLog;
 
