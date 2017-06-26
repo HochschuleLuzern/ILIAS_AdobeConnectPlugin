@@ -314,3 +314,6 @@ max_pax_desc#:#Bei Switch liegt die maximal mögliche Zahl von gleichzeitigen Te
 max_pax_settings_desc#:#Gibt an, wieviel TN sich maximal in einem Raum befinden können. Bei Switch liegt die maximal mögliche Zahl von gleichzeitigen Teilnehmer/innen bei 200. Sobald die Zahl erreicht ist, wird der Meeting-Link ausgeblendet und eine entsprechende Nachricht angezeigt.
 meeting_full#:#In diesem Sitzungsraum wurde die maximale Teilnehmerzahl erreicht. 
 max_size_error#:#Die maximal mögliche Teilnehmerzahl ist:
+only_in_crs_or_grp#:#Nur in Kurs oder Gruppe
+only_in_crs_or_grp_info#:#Meetings dürfen, wenn diese Option ausgewählt wurde, nur innerhalb Kursen oder Gruppen erstellt werden.
+not_in_crs_or_grp#:#Adobe Meetings müssen innerhalb von Kursen oder Gruppen erstellt werden.

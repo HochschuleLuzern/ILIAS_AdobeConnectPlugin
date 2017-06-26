@@ -308,3 +308,6 @@ max_pax_desc#:#Switch has licences for a maximum of 200 participants. It is not 
 max_pax_settings_desc#:#Specifies how many concurrent users can be in a room. Switch has licences for a maximum of 200 participants. If the maximum number is reached the meeting link is hidden and a corrsponding message is shown.
 meeting_full#:#The maximum capacity of this room has been reached.
 max_size_error#:#The maximum number of concurrent participants is:
+only_in_crs_or_grp#:#Only in Courses or Groups
+only_in_crs_or_grp_info#:#If this checkbox is selected, meetings can only be created in courses or groups
+not_in_crs_or_grp#:#Adobe Meetings need to be created inside of courses or groups.
