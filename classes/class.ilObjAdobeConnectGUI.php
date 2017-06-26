@@ -2276,8 +2276,18 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 	 */
 	protected function initCreationForms($type)
 	{
+		global $tree, $ilias;
 		include_once "Services/Administration/classes/class.ilSettingsTemplate.php";
 		$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+		
+		$ref_id = (int) $_GET['ref_id'];
+		$node_data = $tree->getNodeData($ref_id);
+		
+		if (ilAdobeConnectServer::getSetting('only_in_crs_or_grp') && $node_data['type'] != 'crs' && $node_data['type'] != 'grp'
+				&& !$tree->checkForParentType($ref_id, 'crs') && !$tree->checkForParentType($ref_id, 'grp')) {
+			ilUtil::sendFailure($this->pluginObj->txt("not_in_crs_or_grp"), true);
+			$this->ctrl->redirect($this, 'cancelCreation');
+		}
 
 		$templates = ilSettingsTemplate::getAllSettingsTemplates("xavc");
 		sort($templates);
@@ -2313,6 +2323,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		global $ilUser;
 
 		$settings = ilAdobeConnectServer::_getInstance();
+		
 		//Login User - this creates a user if he not exists.
 		if($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI)
 		{

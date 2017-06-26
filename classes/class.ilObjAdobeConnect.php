@@ -291,7 +291,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		/**
 		 * @var $ilCtrl ilCtrl
 		 */
-		global $ilCtrl;
+		global $ilCtrl, $tree;
 		$cmdClass = $ilCtrl->getCmdClass();
 		$cmd      = $ilCtrl->getCmd();
 		

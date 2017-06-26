@@ -568,6 +568,10 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$obj_title_suffix->setInfo($this->pluginObj->txt('obj_title_suffix_info'));
 		$this->form->addItem($obj_title_suffix);
 		
+		$only_in_crs_or_grp = new ilCheckboxInputGUI($this->pluginObj->txt('only_in_crs_or_grp'), 'only_in_crs_or_grp');
+		$only_in_crs_or_grp->setInfo($this->pluginObj->txt('only_in_crs_or_grp_info'));
+		$this->form->addItem($only_in_crs_or_grp);
+		
 		if(count(self::$template_cache) == 0 || true)
 		{
 			$xmlAPI = ilXMLApiFactory::getApiByAuthMode();
@@ -696,6 +700,7 @@ $tbl .= "</table>";
 		
 		$values['obj_creation_settings'] = unserialize(ilAdobeConnectServer::getSetting('obj_creation_settings')) ? unserialize(ilAdobeConnectServer::getSetting('obj_creation_settings')) : '0';
 		$values['obj_title_suffix'] = ilAdobeConnectServer::getSetting('obj_title_suffix') ? ilAdobeConnectServer::getSetting('obj_title_suffix'): 0;  
+		$values['only_in_crs_or_grp'] = ilAdobeConnectServer::getSetting('only_in_crs_or_grp') ? ilAdobeConnectServer::getSetting('only_in_crs_or_grp'): 0;
 		$values['allow_crs_grp_trigger'] = ilAdobeConnectServer::getSetting('allow_crs_grp_trigger') ? ilAdobeConnectServer::getSetting('allow_crs_grp_trigger'): 0;  
 		$values['show_free_slots'] = ilAdobeConnectServer::getSetting('show_free_slots') ? ilAdobeConnectServer::getSetting('show_free_slots'): 0;
 		$values['enable_perm_room'] = ilAdobeConnectServer::getSetting('enable_perm_room', '1') ? ilAdobeConnectServer::getSetting('enable_perm_room', '1'): 0;
@@ -746,6 +751,7 @@ $tbl .= "</table>";
 			ilAdobeConnectServer::setSetting('template_sco_id', (int)$this->form->getInput('template_sco_id'));
 			ilAdobeConnectServer::setSetting('obj_creation_settings', serialize($this->form->getInput('obj_creation_settings')));
 
+			ilAdobeConnectServer::setSetting('only_in_crs_or_grp', (int)$this->form->getInput('only_in_crs_or_grp'));
 			ilAdobeConnectServer::setSetting('allow_crs_grp_trigger', (int)$this->form->getInput('allow_crs_grp_trigger'));
 			ilAdobeConnectServer::setSetting('obj_title_suffix', (int)$this->form->getInput('obj_title_suffix'));
 			ilAdobeConnectServer::setSetting('show_free_slots', (int)$this->form->getInput('show_free_slots'));
