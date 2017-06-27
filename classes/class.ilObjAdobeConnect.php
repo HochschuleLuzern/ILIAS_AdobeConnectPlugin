@@ -504,7 +504,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		global $ilUser, $ilDB;
 
 		// receive breeze session
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 		if(!$session)
 		{
 			throw new ilException('xavc_connection_error');
@@ -597,7 +597,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$ownerObj = new ilObjUser($owner_id); 
 		
 		// receive breeze session
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 		if(!$session)
 		{
 			throw new ilException('xavc_connection_error');
@@ -761,7 +761,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		}
 
 		// receive breeze session
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		$this->pluginObj->includeClass('class.ilXAVCMembers.php');
 
@@ -898,7 +898,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				ilXAVCMembers::deleteXAVCMember($usr_id, $this->getRefId());
 				$xavc_login = ilXAVCMembers::_lookupXAVCLogin($usr_id);
 
-				$session = $this->xmlApi->getBreezeSession();
+				$session = $this->getSession(false, true);
 
 				if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 				{
@@ -949,10 +949,13 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		{
 			#$this->ilias->raiseError($this->lng->txt("err_no_valid_sco_id_given"),$this->ilias->error_obj->MESSAGE);
 		}
+		
+		$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+		$settings = ilAdobeConnectServer::_getInstance();
 
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(true);
 
-		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+		if(($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI || $session != NULL) && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			//only read url via api, if url in database is empty
 			if(!$this->url)
@@ -996,7 +999,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		 */
 		global $ilDB;
 
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1034,7 +1037,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		 */
 		global $ilDB;
 
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(true);
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			$this->xmlApi->deleteMeeting($this->sco_id, $session);
@@ -1385,7 +1388,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function readContents($by_type = NULL)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		$ids = array();
 
@@ -1435,7 +1438,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function readRecords()
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1504,7 +1507,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function addContent($title = "untitled", $description = "")
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1521,7 +1524,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function updateContent($sco_id, $title, $description)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1535,7 +1538,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function deleteContent($sco_id)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1550,7 +1553,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function uploadContent($sco_id)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 			return $this->xmlApi->uploadContent($sco_id, $session);
@@ -1566,7 +1569,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function getParticipants()
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1585,7 +1588,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function addParticipant($login)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		//check if adobe connect account exists
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
@@ -1597,22 +1600,37 @@ class ilObjAdobeConnect extends ilObjectPlugin
 
 
     /**
-     *  Add a new participant to the meeting
+     * Update switch participant at login if needed
      * @param String $login
-     * @param String $status
-     *
-     * @return boolean Returns true if everything is ok
+     * @return String access-rights of user
+     * 
      */
-    public function addSwitchParticipant($login,$status)
+    public function updateSwitchParticipant($adobe_login_name)
     {
-	    $session = $this->xmlApi->getBreezeSession();
-        $participant = $this->xmlApi->updateMeetingParticipantByTechnicalUser($this->getScoId(), $login, $session, $status);
-        return $participant;
+		global $ilUser;
+		$this->pluginObj->includeClass('class.ilXAVCMembers.php');
+
+		$user_id = $ilUser->getId();
+        $ref_id = $this->getRefId();
+        $status = ilXAVCMembers::_lookupStatus($user_id, $ref_id);
+		if (ilXAVCMembers::_lookupXAVCLogin($user_id) != $adobe_login_name) {
+			$member = new ilXAVCMembers($ref_id, $user_id);
+			$member->updateXAVCMember();
+		}
+
+		$session = $this->getSession(false, true);
+
+		if ($status != $this->xmlApi->getMeetingPermission($adobe_login_name, $this->sco_id, $session)) {
+			if (empty($status)) $status = 'remove';
+			$this->xmlApi->updateMeetingParticipantByTechnicalUser($this->getScoId(), $adobe_login_name, $session, $status);
+		}
+	
+		return $this->xmlApi->getMeetingPermission($adobe_login_name, $this->sco_id, $session);
     }
 
 	public function updateParticipant($login, $permission)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1627,7 +1645,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function deleteParticipant($login)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 			return $this->xmlApi->deleteMeetingParticipant($this->sco_id, $login, $session);
@@ -1640,15 +1658,35 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function isParticipant($login)
 	{
-		$session = $this->xmlApi->getBreezeSession();
-
-		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
-			return $this->xmlApi->isParticipant($login, $this->sco_id, $session);
+		global $ilUser;
+		$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+		$settings = ilAdobeConnectServer::_getInstance();
+		
+		if ($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
+			$this->pluginObj->includeClass('class.ilXAVCMembers.php');
+			return ilXAVCMembers::_isMember($ilUser->getId(), $this->getRefId());
+		} else {
+			$session = $this->getSession(false, true);
+			
+			if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+				return $this->xmlApi->isParticipant($login, $this->sco_id, $session);
+		}
+	}
+	
+	/**
+	 * @param string Adobe Login Name
+	 *
+	 * @return integer Principal Id
+	 */
+	public function getPrincipalId($login) {
+		$session = $this->getSession();
+		
+		return $this->xmlApi->getPrincipalId($login, $session);
 	}
 
 	public function getPermissionId()
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
@@ -1817,7 +1855,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	
 	public function getFolderIdByLogin($externalLogin)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession(false, true);
 		if(ilAdobeConnectServer::getSetting('use_user_folders') == 1)
 		{
 			$folder_id = $this->xmlApi->lookupUserFolderId($externalLogin, $session);
@@ -1840,7 +1878,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function getContentIconAttribute($sco_id)
 	{
-		$session = $this->xmlApi->getBreezeSession();
+		$session = $this->getSession();
 
 		$icons = array();
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
@@ -1901,5 +1939,41 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	public function setUseMeetingTemplate($use_meeting_template)
 	{
 		$this->use_meeting_template = $use_meeting_template;
+	}
+	
+	/**
+	 * Returns the Adobe User name of the current user on a switch server
+	 * @return mixed string with Adobe user name or the xml response object, if something went wrong
+	 **/
+	
+	public function getCurrentUserSwitchUserName ()
+	{
+		return $this->xmlApi->getCurrentUserSwitchUserName();
+	}
+	
+	/**
+	 * Returns a session variable, needed to avoid login at open on SwitchAAI-Installations
+	 * @return string with session id, false if SwitchAAI and no session and NULL if non
+	 *	  SwitchAAI and error creating session.
+	 */
+	
+	private function getSession($forceAdmin = false, $forceUser = false)
+	{
+		$this->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+		$settings = ilAdobeConnectServer::_getInstance();
+		
+		$session = 'false';
+		
+		if ($forceUser == true || $settings->getAuthMode() != ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
+			$session = $this->xmlApi->getBreezeSession();
+		} else if (!forceAdmin) {
+			$session = $this->xmlApi->checkBreezeSession();
+		}
+		
+		if ($session == 'false' && $settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
+			$session = $this->xmlApi->login($this->adminLogin, $this->adminPass);
+		}
+		
+		return $session;
 	}
 }

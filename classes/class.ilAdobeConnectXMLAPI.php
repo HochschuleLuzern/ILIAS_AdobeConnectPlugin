@@ -1690,6 +1690,46 @@ class ilAdobeConnectXMLAPI
 			return false;
 		}
     }
+    
+    /**
+     * Check the Permissions of a user on a meeting
+     *
+     * @param String Adobe Login Name
+     * @param Int Meeting SCO-id
+     * @param Sting Session Identifier
+     * @return  String        User Name or NULL if something is wrong
+     **/
+    
+    public function getMeetingPermission($adobe_login_name, $meeting, $session)
+    {
+    	global $ilLog;
+    	
+    	$p_id = $this->getPrincipalId($adobe_login_name, $session);
+    	
+    	$url = $this->getApiUrl(array(
+    			'action' => 'permissions-info',
+    			'acl-id' => $meeting,
+    			'filter-principal-id'   => $p_id,
+    			'session' => $session
+    	));
+    	
+    	$xml = simplexml_load_file($url);
+    	
+    	if($xml && ($perm = $xml->permissions->principal['permission-id']) != "")
+    	{
+    		return (string)$perm;
+    	}
+    	else
+    	{
+    		$ilLog->write('AdobeConnect getBreezeSession Request: '.$url);
+    		if($xml)
+    		{
+    			$ilLog->write('AdobeConnect getBreezeSession Response: '.$xml->asXML());
+    		}
+    		
+    		return NULL;
+    	}
+    }
 
 	public function getPermissionId($meeting, $session)
 	{

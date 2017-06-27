@@ -31,12 +31,6 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		 */
 		global $ilUser;
 
-		//ilObjAdobveConnect::DoRead calls getBreezeSession. Only login if the user has a AAI-Account!
-		if(!ilAdobeConnectServer::useSwitchaaiAuthMode($ilUser->getAuthMode(true)))
-		{
-			return false;
-		}
-
 		self::$breeze_session = null;
 
 		//if there is already a session don't create a new session
@@ -67,6 +61,19 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	{
 		//The BreezeSession is in the SWITCH-Case the Session of the user
 		return $this->externalLogin();
+	}
+	
+	/**
+	 * Check if user already has a breeze-session
+	 * @return String Session id or false if there is no session
+	 */
+	public function checkBreezeSession()
+	{
+		if (!($breezeSession = $_SESSION['breezesession'])) {
+			$breezeSession = "false";
+		}
+		
+		return $breezeSession;
 	}
 
 	/**
@@ -108,17 +115,8 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		$instance = ilAdobeConnectServer::_getInstance();
 
         $params['action'] = 'login';
-        if ($user == '') {
-	        $params['login'] = $instance->getLogin();
-        } else {
-	    	$params['login'] = $user;
-	    }
-	    
-	    if ($pass == '') {
-	        $params['password'] = $instance->getPasswd();
-	    } else {
-	    	$params['password'] = $pass;
-	    }
+        $params['login'] = $instance->getLogin();
+        $params['password'] = $instance->getPasswd();
 
         $api_url = self::getApiUrl($params);
 
@@ -259,6 +257,42 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 			$ilLog->write('AdobeConnect getStartDate Request: '.$url);
 			$ilLog->write('AdobeConnect getStartDate Response: '.$xml->asXML());
 
+			return NULL;
+		}
+	}
+	
+	/**
+	 * Get the User Name of the currently logged in Principal
+	 *
+	 * @return  String        User Name or NULL if something is wrong
+	 */
+	public function getCurrentUserSwitchUserName()
+	{
+		global $ilLog;
+		
+		$session = $this->getBreezeSession();
+		
+		$url = $this->getApiUrl(array('action' => 'common-info', 'session' => $session));
+		
+		$ctx = stream_context_create(array(
+				'http' => array('timeout' => 4),
+				'https' => array('timeout' => 4)
+		));
+		
+		$xml_string = file_get_contents($url, false, $ctx);
+		$xml = simplexml_load_string($xml_string);
+		
+		if($xml && ($principal = $xml->common->user->login) != "")
+		{
+			return (string)$principal;
+		}
+		else
+		{
+			$ilLog->write('AdobeConnect getBreezeSession Request: '.$url);
+			if($xml)
+			{
+				$ilLog->write('AdobeConnect getBreezeSession Response: '.$xml->asXML());
+			}
 			return NULL;
 		}
 	}
