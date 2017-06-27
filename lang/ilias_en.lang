@@ -311,3 +311,7 @@ max_size_error#:#The maximum number of concurrent participants is:
 only_in_crs_or_grp#:#Only in Courses or Groups
 only_in_crs_or_grp_info#:#If this checkbox is selected, meetings can only be created in courses or groups
 not_in_crs_or_grp#:#Adobe Meetings need to be created inside of courses or groups.
+make_public#:#Create Link for direct Access
+make_private#:#Delete Link for direct Access
+is_public#:#This content is publicly available at:
+admins_only#:# (Only visible to administrators)

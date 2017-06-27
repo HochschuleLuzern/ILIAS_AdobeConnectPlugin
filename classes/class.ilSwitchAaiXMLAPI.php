@@ -151,7 +151,7 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 * @param String $type            Used for SWITCHaai meeting|content|...
 	 * @return String                 Meeting or content URL, or NULL if something is wrong
 	 */
-	public function getURL($sco_id, $folder_id, $session, $type = '')
+    public function getURL($sco_id, $folder_id, $session, $type = 'default')
 	{
 		global $ilLog;
 

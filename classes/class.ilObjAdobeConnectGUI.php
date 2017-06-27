@@ -184,6 +184,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 					case 'showContent':
 					case "editParticipants":
 					case "updateParticipants":
+					case "makePublic";
+					case "makePrivate";
 					case 'performSso':
 					case 'requestAdobeConnectContent':
 					case "viewContents":
@@ -848,15 +850,33 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 				$data[$i]['date_created'] = $content->getAttributes()->getAttribute('date-created')->getUnixTime();
 				$data[$i]['description']  = $content->getAttributes()->getAttribute('description');
+				
+				$content_id = $content->getAttributes()->getAttribute('sco-id');
+				$permission = $this->object->getContentPermissionId($content_id);
+				
+				if ($permission == 'view') {
+					$desc_template = new ilTemplate($this->pluginObj->getDirectory().'/templates/default/tpl.desc_visible.html', true, true);
+					$desc_template->setCurrentBlock('description');
+					$desc_template->setVariable('ISPUBLIC_TEXT', $this->txt('is_public'));
+					$desc_template->setVariable('ISPUBLIC_LINK', $server.$content->getAttributes()->getAttribute('url'));
+					$desc_template->setVariable('DESCRIPTION', $data[$i]['description']);
+					$desc_template->parseCurrentBlock();
+					$data[$i]['description'] = $desc_template->get();
+				}
+				
 				if($has_access && $content_type == $by_type)
 				{
-					$content_id = $content->getAttributes()->getAttribute('sco-id');
 					$this->ctrl->setParameter($this, 'content_id', $content_id);
 					if($content_type == 'content')
 					{
 						$action = new ilAdvancedSelectionListGUI();
 						$action->setId('asl_' . $content_id . mt_rand(1, 50));
 						$action->setListTitle($this->lng->txt('actions'));
+						if ($permission == 'remove') {
+							$action->addItem($this->txt('make_public'), '', $this->ctrl->getLinkTarget($this, 'makePublic'));
+						} else {
+							$action->addItem($this->txt('make_private'), '', $this->ctrl->getLinkTarget($this, 'makePrivate'));
+						}
 						$action->addItem($this->lng->txt('edit'), '', $this->ctrl->getLinkTarget($this, 'editItem'));
 						$action->addItem($this->lng->txt('delete'), '', $this->ctrl->getLinkTarget($this, 'askDeleteContents'));
 
@@ -935,25 +955,36 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				}
 
 				$data[$i]['date_created'] = $content->getAttributes()->getAttribute('date-created')->getUnixTime();
-				$data[$i]['description']  = $content->getAttributes()->getAttribute('description');
+				$data[$i]['description']  = $content->getAttributes()->getAttribute('description');		
+				
+				$content_id = $content->getAttributes()->getAttribute('sco-id');
+				$permission = $this->object->getContentPermissionId($content_id);
+				
+				if ($permission == 'view') {
+					$desc_template = new ilTemplate($this->pluginObj->getDirectory().'/templates/default/tpl.desc_visible.html', true, true);
+					$desc_template->setCurrentBlock('description');
+					$desc_template->setVariable('ISPUBLIC_TEXT', $this->txt('is_public'));
+					$desc_template->setVariable('ISPUBLIC_LINK', $server.$content->getAttributes()->getAttribute('url'));
+					$desc_template->setVariable('DESCRIPTION', $data[$i]['description']);
+					$desc_template->parseCurrentBlock();
+					$data[$i]['description'] = $desc_template->get();
+				}
+				
 				if($has_access && $content_type == $by_type)
 				{
-					$content_id = $content->getAttributes()->getAttribute('sco-id');
 					$this->ctrl->setParameter($this, 'content_id', $content_id);
-//					if($content_type == 'content')
-//					{
-						$action = new ilAdvancedSelectionListGUI();
-						$action->setId('asl_' . $content_id . mt_rand(1, 50));
-						$action->setListTitle($this->lng->txt('actions'));
-						$action->addItem($this->lng->txt('edit'), '', $this->ctrl->getLinkTarget($this, 'editRecord'));
-						$action->addItem($this->lng->txt('delete'), '', $this->ctrl->getLinkTarget($this, 'askDeleteContents'));
+					$action = new ilAdvancedSelectionListGUI();
+					$action->setId('asl_' . $content_id . mt_rand(1, 50));
+					$action->setListTitle($this->lng->txt('actions'));
+					if ($permission == 'remove'  || $permission == 'view-denied') {
+						$action->addItem($this->txt('make_public'), '', $this->ctrl->getLinkTarget($this, 'makePublic'));
+					} else {
+						$action->addItem($this->txt('make_private'), '', $this->ctrl->getLinkTarget($this, 'makePrivate'));
+					}
+					$action->addItem($this->lng->txt('edit'), '', $this->ctrl->getLinkTarget($this, 'editRecord'));
+					$action->addItem($this->lng->txt('delete'), '', $this->ctrl->getLinkTarget($this, 'askDeleteContents'));
 
-						$data[$i]['actions'] = $action->getHtml();
-//					}
-//					else
-//					{
-//						$data[$i]['actions'] = '';
-//					}
+					$data[$i]['actions'] = $action->getHtml();
 				}
 				++$i;
 			}
@@ -2045,6 +2076,24 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 	{
 		$this->is_record = true;
 		$this->updateContent();
+	}
+	
+	/**
+	 * Changes the visibility of a Content or a Recording in an Adobe Connect Room to public
+	 */
+	public function makePublic ()
+	{
+		$this->object->changeContentVisibility((int)$_GET['content_id'], 'view');
+		$this->showContent();
+	}
+	
+	/**
+	 * Changes the visibility of a Content or a Recording in an Adobe Connect Room to private
+	 */
+	public function makePrivate ()
+	{
+		$this->object->changeContentVisibility((int)$_GET['content_id'], 'remove');
+		$this->showContent();
 	}
 
     /**
@@ -3314,11 +3363,17 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 				//show contents
 				if(
-					ilXAVCPermissions::hasAccess($ilUser->getId(), $this->object->getRefId(), AdobeConnectPermissions::PERM_READ_CONTENTS) 
-					&& $this->object->getReadContents('content')
+					(ilXAVCPermissions::hasAccess($ilUser->getId(), $this->object->getRefId(), AdobeConnectPermissions::PERM_READ_CONTENTS)
+							&& $this->object->getReadContents('content')) || ilXAVCPermissions::hasAccess($ilUser->getId(), $this->ref_id, AdobeConnectPermissions::PERM_UPLOAD_CONTENT)
+							|| $has_write_permission
 				)
 				{
-					$info->addSection($this->pluginObj->txt('file_uploads'));
+					$admins_only = '';
+					if (!$this->object->getReadContents('content')) {
+						$admins_only = $this->pluginObj->txt('admins_only');
+					}
+					
+					$info->addSection($this->pluginObj->txt('file_uploads').' '.$admins_only);
 					$info->setFormAction($this->ctrl->getFormAction($this, 'showContent'));
 					$has_access = false;
 					if(
@@ -3340,20 +3395,25 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 				// show records
 				if(
-					ilXAVCPermissions::hasAccess($ilUser->getId(), $this->object->getRefId(), AdobeConnectPermissions::PERM_READ_RECORDS) &&
-					$this->object->getReadRecords()
+					(ilXAVCPermissions::hasAccess($ilUser->getId(), $this->object->getRefId(), AdobeConnectPermissions::PERM_READ_RECORDS) &&
+							$this->object->getReadRecords()) || ilXAVCPermissions::hasAccess($ilUser->getId(), $this->ref_id, AdobeConnectPermissions::PERM_EDIT_RECORDS)
+							|| $has_write_permission 
 				)
 				{
 					$has_access = false;
+					$admins_only = '';
 					if(
 						ilXAVCPermissions::hasAccess($ilUser->getId(), $this->ref_id, AdobeConnectPermissions::PERM_EDIT_RECORDS)
 						|| $has_write_permission
 					)
 					{
 						$has_access = true;
+						if (!$this->object->getReadRecords()) {
+							$admins_only = $this->pluginObj->txt('admins_only');
+						}
 					}
 					
-					$info->addSection($this->pluginObj->txt('records'));
+					$info->addSection($this->pluginObj->txt('records').' '.$admins_only);
 					$info->addProperty('', $this->viewRecords($has_access, 'record'));
 				}
 			}

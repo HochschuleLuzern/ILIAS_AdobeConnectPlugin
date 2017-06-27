@@ -1084,6 +1084,45 @@ class ilAdobeConnectXMLAPI
     }
     
     /**
+     *  Change the visibility of a content or a recording to public and back to private
+     *
+     * @param String $sco_id
+     * @param String $session
+     * @param String $permission Permission to change to
+     * @return Returns TRUE on success and FALSE on faliure
+     */
+    public function changeContentVisibility($sco_id, $session, $permission)
+    {
+    	global $ilLog;
+    	
+    	$url = $this->getApiUrl(array(
+    			'action' => 'permissions-update',
+    			'acl-id' => $sco_id,
+    			'principal-id' => 'public-access',
+    			'permission-id' => $permission,
+    			'session' => $session
+    	));
+    	
+    	$xml = simplexml_load_file($url);
+    	
+    	if ($xml->status['code']=="ok")
+    	{
+    		return true;
+    	}
+    	else
+    	{
+    		$ilLog->write('AdobeConnect setMeetingPublic Request: '.$url);
+    		
+    		if($xml)
+    		{
+    			$ilLog->write('AdobeConnect setMeetingPublic Response: '.$xml->asXML());
+    		}
+    		
+    		return false;
+    	}
+    }
+    
+    /**
      *  Gets meeting or content language
      *
      * @param String $sco_id

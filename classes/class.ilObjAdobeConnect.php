@@ -1473,7 +1473,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	}
 
 	/**
-	 *  Returns the content associated with the identifier
+	 * Returns the content associated with the identifier
 	 * @param String $sco_id
 	 * @return ilAdobeConnectContent
 	 */
@@ -1482,6 +1482,17 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$contents = $this->searchContent(array("sco-id" => $sco_id));
 
 		return $contents[0];
+	}
+	
+	/**
+	 * Changes the visibility of content
+	 * @param String $sco_id
+	 * @param String $permission
+	 */
+	public function changeContentVisibility($sco_id, $permission)
+	{
+		$session = self::getSession();
+		$this->xmlApi->changeContentVisibility($sco_id, $session, $permission);
 	}
 
 	/**
@@ -1642,6 +1653,17 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			$permission = $this->xmlApi->getPermissionId($this->sco_id, $session);
+		}
+		return $permission;
+	}
+	
+	public function getContentPermissionId($sco_id)
+	{
+		$session = self::getSession();
+		
+		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
+		{
+			$permission = $this->xmlApi->getPermissionId($sco_id, $session);
 		}
 		return $permission;
 	}
