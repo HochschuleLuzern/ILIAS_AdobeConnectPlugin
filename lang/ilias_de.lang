@@ -321,3 +321,7 @@ make_public#:#Link für Direktzugriff erstellen
 make_private#:#Link für Direktzugriff löschen
 is_public#:#Dieses Dokument ist unter der folgenden URL öffentlich zugänglich:
 admins_only#:# (Nur für Administratoren sichtbar)
+make_hosts#:#Zu Veranstaltern machen
+make_moderators#:#Zu Moderatoren machen
+make_participants#:#Zu Teilnehmern machen
+make_blocked#:#Zugriff entziehen

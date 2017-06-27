@@ -1250,6 +1250,43 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		}
 		return $this->editParticipants();
 	}
+	
+	public function makeHosts() {
+		$this->changeStatusUserTable($_POST['usr_id'], "host");
+	}
+	
+	public function makeModerators() {
+		$this->changeStatusUserTable($_POST['usr_id'], "mini-host");
+	}
+	
+	public function makeParticipants() {
+		$this->changeStatusUserTable($_POST['usr_id'], "view");
+	}
+	
+	public function makeBlocked() {
+		$this->changeStatusUserTable($_POST['usr_id'], "denied");
+	}
+	
+	private function changeStatusUserTable($usr_list, $status) {
+		$this->pluginObj->includeClass('class.ilXAVCMembers.php');
+		if(isset($_POST['usr_id']))
+		{
+			foreach ($_POST['usr_id'] as $selected_user)
+			{
+				$memberObj = new ilXAVCMembers($this->object->getRefId(), $selected_user);
+				$memberObj->setStatus($status);
+				$memberObj->updateXAVCMember();
+				$this->object->updateParticipant(ilXAVCMembers::_lookupXAVCLogin($selected_user),$memberObj->getStatus());
+			}
+		}
+		else
+			if(!is_array($_POST['usr_id']))
+			{
+				ilUtil::sendInfo($this->txt('participants_select_one'));
+				return $this->editParticipants();
+			}
+		return $this->editParticipants();
+	}
 
 	public function showMembersGallery()
 	{
