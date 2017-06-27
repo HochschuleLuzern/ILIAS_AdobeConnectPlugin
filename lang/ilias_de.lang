@@ -317,3 +317,7 @@ max_size_error#:#Die maximal mögliche Teilnehmerzahl ist:
 only_in_crs_or_grp#:#Nur in Kurs oder Gruppe
 only_in_crs_or_grp_info#:#Meetings dürfen, wenn diese Option ausgewählt wurde, nur innerhalb Kursen oder Gruppen erstellt werden.
 not_in_crs_or_grp#:#Adobe Meetings müssen innerhalb von Kursen oder Gruppen erstellt werden.
+make_public#:#Link für Direktzugriff erstellen
+make_private#:#Link für Direktzugriff löschen
+is_public#:#Dieses Dokument ist unter der folgenden URL öffentlich zugänglich:
+admins_only#:# (Nur für Administratoren sichtbar)
