@@ -721,7 +721,23 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 					}
 
 					$presentation_url = ilAdobeConnectServer::getPresentationUrl();
-                    $url = ilAdobeConnectServer::getSetting('cave')."?back=".$presentation_url.$this->object->getURL();
+					
+					//With this extra roundtrip, we can update our local data about the SWITCH AAI User
+					if ($_GET['wayback'] == 1) {
+						$url = ilAdobeConnectServer::getSetting('cave')."?back=".$presentation_url.$this->object->getURL();
+						$adobe_login_name = $this->object->getCurrentUserSwitchUserName();
+						$access = $this->object->updateSwitchParticipant($adobe_login_name);
+						
+						if ($access == 'denied' || empty($access)) {
+							ilUtil::sendFailure($this->pluginObj->txt('no_access'), true);
+							$this->ctrl->redirect($this, "showContent");
+						}
+					} else {
+						$this->ctrl->setParameter($this, "wayback", 1);
+						$target = ILIAS_HTTP_PATH."/". urlencode($this->ctrl->getLinkTarget($this, 'performSso', '', false, false));
+						$url = ilAdobeConnectServer::getSetting('cave')."?back=".$target;
+					}
+					
                     $sso_tpl = new ilTemplate($this->pluginObj->getDirectory()."/templates/default/tpl.perform_sso.html", true, true);
 					$sso_tpl->setVariable('SPINNER_SRC', $this->pluginObj->getDirectory().'/templates/js/spin.js');
                     $sso_tpl->setVariable('TITLE_PREFIX', $title_prefix);
@@ -946,8 +962,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				switch($auth_mode)
 				{
 					case ilAdobeConnectServer::AUTH_MODE_SWITCHAAI:
-						$data[$i]['link'] = $server . $content->getAttributes()->getAttribute('url');
-
+						$data[$i]['link'] = ilAdobeConnectServer::getSetting('cave')."?back=".$server . $content->getAttributes()->getAttribute('url');
+						break;
 					default:
 						$data[$i]['rec_url'] = $server . $content->getAttributes()->getAttribute('url');
 						$this->ctrl->setParameter($this, 'record_url', urlencode($data[$i]['rec_url']));
@@ -3105,7 +3121,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 			{
 				$new_member_ids = array_diff($crs_grp_member_ids, $current_member_ids);
 				$delete_member_ids = array_diff($current_member_ids, $crs_grp_member_ids);
-
+        		$ongoing_member_ids = array_intersect($current_member_ids, $crs_grp_member_ids);
+        
 				if(is_array($new_member_ids) && count($new_member_ids) > 0)
 				{
 					$this->object->addCrsGrpMembers($this->object->getRefId(), $sco_id, $new_member_ids);
@@ -3115,7 +3132,30 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				{
 					$this->object->deleteCrsGrpMembers($sco_id, $delete_member_ids);
 				}
-			}
+        
+        		//This is necessary to assure consistency between Ilias Roles on Group/Course and on the Adobe Connect Room.
+        		//Excemption granted for none Switch Server Types, as there is no way to test this for us.
+        		$this->pluginObj->includeClass('class.ilAdobeConnectRoles.php');
+        		$xavc_role = new ilAdobeConnectRoles($this->object->getRefId());
+        		$settings = ilAdobeConnectServer::_getInstance();
+        		if($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI)
+        		{
+        			foreach ($ongoing_member_ids as $member_id)
+        			{
+            			$is_admin = $xavc_role->isAdministrator($member_id);
+            			if ($this->object->isAdmin($member_id) && !$is_admin)
+            			{
+            				$xavc_role->detachMemberRole($member_id);
+            				$xavc_role->addAdministratorRole($member_id);
+            			} 
+            			else if ($this->object->isMember($member_id) && $is_admin)
+            			{
+            	  			$xavc_role->detachAdministratorRole($member_id);
+            	  			$xavc_role->addMemberRole($member_id);
+            			}
+          			}
+        		}
+      		}
 		}
 		$response->succcess = true;
 		echo json_encode($response);
@@ -3190,10 +3230,14 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 				$quota 		= new ilAdobeConnectQuota();
 			}
 // show link
+		$settings = ilAdobeConnectServer::_getInstance();
+
 		if(($this->object->getPermanentRoom() == 1 || $this->doProvideAccessLink())
-			&& $this->object->isParticipant($xavc_login))
+				&& ($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI 
+				|| $this->object->isParticipant($xavc_login)))
 		{
-			if(!$quota->mayStartScheduledMeeting($this->object->getScoId()))
+			if($settings->getAuthMode() != ilAdobeConnectServer::AUTH_MODE_SWITCHAAI
+            		&& !$quota->mayStartScheduledMeeting($this->object->getScoId()))
 			{
 				$href = $this->txt("meeting_not_available_no_slots");
 			}
@@ -3235,17 +3279,6 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 		$settings = ilAdobeConnectServer::_getInstance();
 
-		if($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI AND ilAdobeConnectServer::useSwitchaaiAuthMode($ilUser->getAuthMode(true)))
-		{
-            //Login User - this creates a user if he not exists.
-            $ilAdobeConnectUser = new ilAdobeConnectUserUtil($this->user->getId());
-            $ilAdobeConnectUser->loginUser();
-
-            //Add the user as Participant @adobe switch
-            $status = ilXAVCMembers::_lookupStatus($ilUser->getId(), $this->object->getRefId());
-            $this->object->addSwitchParticipant($ilUser->getEmail(),$status);
-		}
-
 		$this->tabs->setTabActive('contents');
 
 		include_once("./Services/InfoScreen/classes/class.ilInfoScreenGUI.php");
@@ -3258,23 +3291,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		$is_member = ilObjAdobeConnectAccess::_hasMemberRole($ilUser->getId(), $this->object->getRefId());
 		$is_admin = ilObjAdobeConnectAccess::_hasAdminRole($ilUser->getId(), $this->object->getRefId());
 
-		//SWITCHAAI: If the user has no SWITCHaai-Account, we show the room link without connecting to the adobe-connect server. This is used for guest logins.
-		$show_only_roomlink = false;
-		if($settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI AND !ilAdobeConnectServer::useSwitchaaiAuthMode($ilUser->getAuthMode(true)))
-		{
-			$show_only_roomlink = true;
-			$presentation_url = $settings->getPresentationUrl();
-			$button_txt = $this->pluginObj->txt('enter_vc');
-			$button_target = $presentation_url . $this->object->getURL();
-			$button_tpl = new ilTemplate($this->pluginObj->getDirectory()."/templates/default/tpl.bigbutton.html", true, true);
-			$button_tpl->setVariable('BUTTON_TARGET', $button_target);
-			$button_tpl->setVariable('BUTTON_TEXT', $button_txt);
-			$big_button = $button_tpl->get();
-			$info->addSection('');
-			$info->addProperty('',$big_button."<br />");
-		}
-
-		if (($this->access->checkAccess("write", "", $this->object->getRefId()) || $is_member || $is_admin) && !$show_only_roomlink)
+		if (($this->access->checkAccess("write", "", $this->object->getRefId()) || $is_member || $is_admin))
 		{
 			$presentation_url = $settings->getPresentationUrl();
 
