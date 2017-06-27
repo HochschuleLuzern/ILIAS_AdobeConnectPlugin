@@ -14,10 +14,11 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 		/**
 		 * @var $ilCtrl ilCtrl
 		 */
-		global $ilCtrl;
+		global $ilCtrl, $tpl;
 
 		$this->ctrl = $ilCtrl;
 		
+		$tpl->addJavascript("./Customizing/global/plugins/Services/Repository/RepositoryObject/AdobeConnect/templates/js/plugin.js");
 
 		$this->setId('xavc_participants');
 
@@ -25,6 +26,7 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 		$this->setDefaultOrderField('');
 		$this->setExternalSorting(false);
 		$this->setExternalSegmentation(false);
+		$this->pluginObj = ilPlugin::getPluginObject('Services', 'Repository', 'robj', 'AdobeConnect');
 
 		parent::__construct($a_parent_obj, $a_parent_cmd);
 
@@ -33,7 +35,6 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 
 		$this->setTitle($a_parent_obj->pluginObj->txt("participants"));
 		$this->addColumns();
-		$this->addCommandButtons();
 		$this->addMultiCommands();
 
 		$this->setSelectAllCheckbox('usr_id[]');
@@ -46,21 +47,32 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 
 	private function addMultiCommands()
 	{
-		global $ilUser, $lng;
+		global $ilUser, $lng, $rbacsystem, $tree;
 		$this->parent_obj->pluginObj->includeClass('class.ilXAVCPermissions.php');
-		if(ilXAVCPermissions::hasAccess($ilUser->getId(), $this->parent_obj->ref_id, AdobeConnectPermissions::PERM_CHANGE_ROLE))
+
+		$isadmin = $rbacsystem->checkAccessOfUser($ilUser->getId(),'write',$this->parent_obj->ref_id);
+                $this->parent_obj->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+                $settings = ilAdobeConnectServer::_getInstance();
+
+		if(ilXAVCPermissions::hasAccess($ilUser->getId(), $this->parent_obj->ref_id, AdobeConnectPermissions::PERM_CHANGE_ROLE)
+			|| $isadmin && $settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI)
 		{
 			$this->addMultiCommand('updateParticipants',$lng->txt('update'));
+			$this->addMultiCommand('makeHosts', $this->pluginObj->txt('make_hosts'));
+			$this->addMultiCommand('makeModerators', $this->pluginObj->txt('make_moderators'));
+			$this->addMultiCommand('makeParticipants', $this->pluginObj->txt('make_participants'));
+			$this->addMultiCommand('makeBlocked', $this->pluginObj->txt('make_blocked'));
 		}
-		if(ilXAVCPermissions::hasAccess($ilUser->getId(), $this->parent_obj->ref_id, AdobeConnectPermissions::PERM_ADD_PARTICIPANTS))
+
+		$this->parent_obj->pluginObj->includeClass('class.ilAdobeConnectServer.php');
+    $settings = ilAdobeConnectServer::_getInstance();
+
+		if((ilXAVCPermissions::hasAccess($ilUser->getId(), $this->parent_obj->ref_id, AdobeConnectPermissions::PERM_ADD_PARTICIPANTS)
+      || $isadmin && $settings->getAuthMode() == ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) 
+      && !$settings->getSetting('allow_crs_grp_trigger'))
 		{
 			$this->addMultiCommand('detachMember', $lng->txt('delete'));
 		}
-	}
-
-	private function addCommandButtons()
-	{
-		
 	}
 
 	/**
@@ -71,14 +83,7 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 	{
 		if((int)$row['user_id'])
 		{
-//			$action = new ilAdvancedSelectionListGUI();
-//			$action->setId('asl_' . $row['user_id']);
-//			$action->setListTitle($this->lng->txt('actions'));
-//			$this->ctrl->setParameter($this->parent_obj, 'user_id', $row['user_id']);
-		
-			
 			$this->ctrl->setParameter($this->parent_obj, 'usr_id', '');
-//			$row['actions']  = $action->getHtml();
 			if($row['user_id']== $this->parent_obj->object->getOwner())
 			{
 				$row['checkbox'] = ilUtil::formCheckbox(false, 'usr_id[]', $row['user_id'], true);
@@ -90,7 +95,6 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 		}
 		else
 		{
-//			$row['actions'] = '';
 			$row['checkbox'] = '';
 		}
 
@@ -115,8 +119,6 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 			);
 
 				
-			
-//			$user_status = ilXAVCMembers::_lookupStatus($row['user_id'], $this->parent_obj->object->getRefId());
 			if($row['xavc_status'])
 			{
 				if($row['user_id'] == $this->parent_obj->object->getOwner())
