@@ -433,13 +433,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		
 		$settings = ilAdobeConnectServer::_getInstance();
 		
-		$available_langs = $settings->getSetting('langs');
+		$available_langs = $settings->getLangs();
 		
-		if ($available_langs == '' || $available_langs == NULL) {
-			$available_langs = ['en'];
-		} else {
-			$available_langs = array_map ('trim', explode(',', $available_langs));
-		}
 		$meeting_lang = new ilSelectInputGUI($this->pluginObj->txt('meeting_lang'), 'meeting_lang');
 		$meeting_lang->setOptions($available_langs);
 		$meeting_lang->setRequired(true);
@@ -2546,13 +2541,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		$radio_access_level->addOption($opt_public);
 		$radio_access_level->setValue( ilObjAdobeConnect::ACCESS_LEVEL_PROTECTED);
 		
-		$available_langs = $settings->getSetting('langs');
-		
-		if ($available_langs == '' || $available_langs == NULL) {
-			$available_langs = ['en'];
-		} else {
-			$available_langs = array_map('trim', explode(",", $available_langs));
-		}
+		$available_langs = $settings->getLangs();
 		
 		$meeting_lang = new ilSelectInputGUI($this->pluginObj->txt('meeting_lang'), 'meeting_lang');
 		$meeting_lang->setOptions($available_langs);

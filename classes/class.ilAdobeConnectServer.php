@@ -397,6 +397,23 @@ class ilAdobeConnectServer
 		}
 		return true;
 	}
+	
+	public static function getLangs() {
+	    $langs = self::getSetting('langs');
+	    
+	    if ($langs == '' || $langs == NULL) {
+	        $available_langs = ['en' => 'en'];
+	    } else {
+	        $langs = explode(',', $langs);
+	        
+	        foreach ($langs as $lang) {
+	            $lang = trim($lang);
+	            $available_langs[$lang] = $lang;
+	        }
+	    }
+	    
+	    return $available_langs;
+	}
 
 
 	public static function getPresentationUrl($api_call = false)
