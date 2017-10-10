@@ -3169,12 +3169,12 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
         			foreach ($ongoing_member_ids as $member_id)
         			{
             			$is_admin = $xavc_role->isAdministrator($member_id);
-            			if ($this->object->isAdmin($member_id) && !$is_admin)
+            			if ($this->object->getParticipantsObject()->isAdmin($member_id) && !$is_admin)
             			{
             				$xavc_role->detachMemberRole($member_id);
             				$xavc_role->addAdministratorRole($member_id);
             			} 
-            			else if ($this->object->isMember($member_id) && $is_admin)
+            			else if ($this->object->getParticipantsObject()->isMember($member_id) && $is_admin)
             			{
             	  			$xavc_role->detachAdministratorRole($member_id);
             	  			$xavc_role->addMemberRole($member_id);
