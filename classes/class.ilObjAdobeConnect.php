@@ -407,8 +407,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		
 		if (strlen($_POST['meeting_lang']) > 0) {
 			$this->setMeetingLang($_POST['meeting_lang']);
-		} else if ($langs = ilAdobeConnectServer::getSetting('langs')) {
-			$this->setMeetingLang(trim(explode(",", $langs)[0]));
+		} else if ($langs = ilAdobeConnectServer::getLangs()) {
+			$this->setMeetingLang($langs[0]);
 		}
 		
 		if (strlen($_POST['max_pax']) > 0) {
