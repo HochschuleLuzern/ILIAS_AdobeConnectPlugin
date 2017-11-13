@@ -2245,7 +2245,7 @@ class ilAdobeConnectXMLAPI
 		
 		foreach($xml->shortcuts->sco as $folder)
 		{
-			if(($folder['type'] == 'shared-meeting-templates') || $folder['type'] == 'my-meeting-templates')
+		    if((ilAdobeConnectServer::getSetting('user_assignment_mode') != ilAdobeConnectServer::ASSIGN_USER_SWITCH && $folder['type'] == 'shared-meeting-templates') || $folder['type'] == 'my-meeting-templates')
 			{
 				$sco_id = (string)$folder['sco-id'];
 				$txt_folder_name = $folder['type'] == 'shared-meeting-templates' ? $txt_shared_meeting_templates : $txt_my_meeting_templates;
