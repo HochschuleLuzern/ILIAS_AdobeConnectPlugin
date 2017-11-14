@@ -1056,66 +1056,6 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			array('integer'), array($this->sco_id));
 	}
 
-	/**
-	 * Do Cloning
-	 */
-	public function doClone($a_target_id, $a_copy_id, $new_obj)
-	{
-		/**
-		 * @var $ilDB   ilDB
-		 * @var $ilUser ilObjUser
-		 */
-		global $ilDB, $ilUser;
-
-		// to avoid date-conflicts:
-		// start_date = now - 2h
-		// duration = 1h
-
-		$now              = new ilDateTime(time(), IL_CAL_UNIX);
-		$this->start_date = new ilDateTime($now->getUnixTime() - 7200, IL_CAL_UNIX);
-		//$this->start_date = new ilDateTime(0, IL_CAL_UNIX);
-		$this->duration = array('hours' => 1, 'minutes' => 0);
-
-		$new_obj->setStartDate($this->getStartDate());
-
-		$new_obj->setInstructions($this->getInstructions());
-		$new_obj->setContactInfo($this->getContactInfo());
-		$new_obj->setPermanentRoom($this->getPermanentRoom());
-		$new_obj->setReadContents($this->getReadContents());
-		$new_obj->setReadRecords($this->getReadRecords());
-		$new_obj->setDuration($this->getDuration());
-		$new_obj->setMeetingLang($this->getMeetingLang());
-		$new_obj->setMaxPax($this->getMaxPax());
-		$new_obj->setURL($this->getURL());
-		$new_obj->setScoId($this->getScoId());
-		$new_obj->setFolderId($this->getFolderId());
-		$new_obj->update();
-
-		// add xavc-member,  assign roles
-		$new_obj_id = $new_obj->getId();
-		$res        = $ilDB->queryF('SELECT sco_id FROM rep_robj_xavc_data WHERE id = %s',
-			array('integer'), array($new_obj_id));
-
-		$row        = $ilDB->fetchAssoc($res);
-		$new_sco_id = $row['sco_id'];
-
-		$this->pluginObj->includeClass('class.ilXAVCMembers.php');
-		$this->pluginObj->includeClass('class.ilAdobeConnectRoles.php');
-
-		$xavcMemberObj = new ilXAVCMembers($new_obj->getRefId(), $ilUser->getId());
-		$xavcMemberObj->setPresenterStatus();
-		$xavcMemberObj->setScoId($new_sco_id);
-		$xavcMemberObj->insertXAVCMember();
-
-		$xavc_role = new ilAdobeConnectRoles($new_obj->getRefId());
-		$xavc_role->addAdministratorRole($ilUser->getId());
-
-		if(ilAdobeConnectServer::getSetting('add_to_desktop') == 1)
-		{
-			ilObjUser::_addDesktopItem($ilUser->getId(), $new_obj->getRefId(), 'xavc');
-		}
-	}
-
 	/*
 	* Set/Get Methods for our virtual classroom properties
 	*/
