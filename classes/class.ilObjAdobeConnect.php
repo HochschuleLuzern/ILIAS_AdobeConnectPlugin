@@ -554,16 +554,21 @@ class ilObjAdobeConnect extends ilObjectPlugin
 
 		$this->xmlApi->updateMeetingParticipant($sco_id, $this->externalLogin, $session, 'host');
 
-		$start_date = time();
-		$end_date = strtotime('+2 hours');			
+		$this->start_date = time();
+		$this->end_date = $this->start_date + 7200;
+		$this->meeting_lang = $this->xmlApi->getMeetingLang($sco_id, $session);
+		
+		$this->url = $this->xmlApi->getURL($sco_id, $folder_id, $session);
 
 		$ilDB->insert('rep_robj_xavc_data',
 			array(
 				'id'     => array('integer', $obj_id),
 				'sco_id' => array('integer', $sco_id),
-				'start_date' => array('integer', $start_date),
-				'end_date' => array('integer', $end_date),
-				'folder_id' => array('integer', $folder_id)
+				'start_date' => array('integer', $this->start_date),
+				'end_date' => array('integer', $this->end_date),
+				'folder_id' => array('integer', $folder_id),
+			    'url_path' => array('text', $this->url),
+			    'meeting_lang' => array('text', $this->meeting_lang)
 			)
 		);
 	}
@@ -1038,6 +1043,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		global $ilDB;
 
 		$session = $this->getSession(true);
+		$this->xmlApi->login($this->adminLogin, $this->adminPass, $session);
 		if($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session))
 		{
 			$this->xmlApi->deleteMeeting($this->sco_id, $session);
