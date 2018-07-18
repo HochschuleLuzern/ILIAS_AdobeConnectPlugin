@@ -1,13 +1,13 @@
 <?php
 
-include_once("./Services/Repository/classes/class.ilObjectPluginGUI.php");
-include_once("Services/Form/classes/class.ilPropertyFormGUI.php");
+include_once 'Services/Repository/classes/class.ilObjectPluginGUI.php';
+include_once 'Services/Form/classes/class.ilPropertyFormGUI.php';
 include_once 'Services/Search/classes/class.ilQueryParser.php';
 include_once 'Services/Search/classes/class.ilObjectSearchFactory.php';
-include_once './Services/User/classes/class.ilPublicUserProfileGUI.php';
-include_once('Services/Search/classes/class.ilRepositorySearchGUI.php');
+include_once 'Services/User/classes/class.ilPublicUserProfileGUI.php';
+include_once 'Services/Search/classes/class.ilRepositorySearchGUI.php';
 require_once dirname(__FILE__) . '/../interfaces/interface.AdobeConnectPermissions.php';
-require_once './Services/User/classes/class.ilUsersGalleryGUI.php';
+require_once 'Services/User/Gallery/classes/class.ilUsersGalleryGUI.php';
 
 /**
 * User Interface class for Adobe Connect repository object.
