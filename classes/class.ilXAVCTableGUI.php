@@ -22,18 +22,7 @@ class ilXAVCTableGUI extends ilTable2GUI
 	 */
 	public function __construct($a_parent_obj, $a_parent_cmd = "")
 	{
-		/**
-		 * @var $lng 	$lng
-		 * @var $ilCtrl ilCtrl 
-		 */
-
-	 	global $lng, $ilCtrl;
-
-	 	$this->lng = $lng;
-	 	$this->ctrl = $ilCtrl;
-
 	 	parent::__construct($a_parent_obj, $a_parent_cmd);
-
 
 		$this->setFormAction($this->ctrl->getFormAction($a_parent_obj));
 	}

@@ -27,11 +27,17 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 	 */
 	public function _checkAccess($a_cmd, $a_permission, $a_ref_id, $a_obj_id, $a_user_id = "")
 	{
+		global $DIC;
+		
 		/**
 		 * @var $ilUser         ilObjUser
+		 */
+		$ilUser = $DIC->user();
+		
+		/**
 		 * @var $ilObjDataCache ilObjectDataCache
 		 */
-		global $ilUser, $ilObjDataCache;
+		$ilObjDataCache = $DIC['ilObjDataCache'];
 
 		if(!$a_user_id)
 		{
@@ -78,10 +84,11 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 	 */
 	public static function _hasMemberRole($a_user_id, $a_ref_id)
 	{
+		global $DIC;
 		/**
 		 * @var $rbacreview ilRbacReview
 		 */
-		global $rbacreview;
+		$rbacreview = $DIC->rbac()->review();
 
 		$roles  = $rbacreview->getRoleListByObject($a_ref_id);
 		$result = false;
@@ -106,10 +113,11 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 	 */
 	public static function _hasAdminRole($a_user_id, $a_ref_id)
 	{
+		global $DIC;
 		/**
 		 * @var $rbacreview ilRbacReview
 		 */
-		global $rbacreview;
+		$rbacreview = $DIC->rbac()->review();
 
 		$roles  = $rbacreview->getRoleListByObject($a_ref_id);
 		$result = false;
@@ -129,10 +137,11 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 
 	public static function getLocalAdminRoleTemplateId()
 	{
+		global $DIC;
 		/**
 		 * @var $ilDB ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		// try reading permission template for local admin role
 		$res = $ilDB->queryf('SELECT obj_id FROM object_data WHERE type = %s AND title = %s',
@@ -156,10 +165,11 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 
 	public static function getLocalMemberRoleTemplateId()
 	{
+		global $DIC;
 		/**
 		 * @var $ilDB ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		// try reading permission template for local admin role
 		$res = $ilDB->queryf('SELECT obj_id FROM object_data WHERE type = %s AND title = %s',
@@ -184,9 +194,12 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 
 	private static function initLocalAdminRoleTemplate()
 	{
+		global $DIC;
+		
 		/**
 		 * @var $ilDB ilDB
 		 */
+		$ilDB = $DIC->database();
 
 		$xavc_typ_id = self::checkObjectOperationPermissionsInitialized();
 
@@ -262,10 +275,13 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 		// checks for surely initialized extra permissions for xavc
 		// (and also returns obj_id of xavc type definition)
 		$xavc_typ_id = self::checkObjectOperationPermissionsInitialized();
+		
+		global $DIC;
+		
 		/**
 		 * @var $ilDB ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		$member_rolt_id = 0;
 
@@ -318,10 +334,11 @@ class ilObjAdobeConnectAccess extends ilObjectPluginAccess
 
 	private static function checkObjectOperationPermissionsInitialized()
 	{
+		global $DIC;
 		/**
 		 * @var $ilDB ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		// lookup obj_id of xavc type definition
 		$xavc_typ_id = 0;

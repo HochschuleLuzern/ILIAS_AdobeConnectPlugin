@@ -12,6 +12,8 @@ class ilXAVCMembers
 	public $status = null;
 	public $xavc_login = null;
 	public $principal_id = null;
+	
+	private $db;
 
 
 	public function setScoId($a_sco_id)
@@ -84,13 +86,9 @@ class ilXAVCMembers
 	
 	public function __construct($a_ref_id, $a_user_id )
 	{
-		/**
-		 * @var $ilDB ilDB
-		 *
-		 */
-		global $ilDB;
+		global $DIC;
 
-		$this->db = $ilDB;
+		$this->db = $DIC->database();
 		$this->ref_id = $a_ref_id;
 		$this->user_id = $a_user_id;
 
@@ -100,17 +98,12 @@ class ilXAVCMembers
 
 	private function __read()
 	{
-		/**
-		 * @var $ilDB ilDB
-		 *
-		 */
-		global $ilDB;
-		$res = $ilDB->queryf('SELECT * FROM rep_robj_xavc_members
+		$res = $this->db->queryf('SELECT * FROM rep_robj_xavc_members
 			WHERE user_id = %s AND ref_id = %s',
 				array('integer', 'integer'),
 				array($this->user_id, $this->ref_id));
 
-		while($row = $ilDB->fetchAssoc($res))
+		while($row = $this->db->fetchAssoc($res))
 		{
 			$this->sco_id = $row['sco_id'];
 			$this->status = $row['xavc_status'];
@@ -120,22 +113,16 @@ class ilXAVCMembers
 	public function getXAVCMembers()
 	{
 		// ILIAS_USERS - XAVC-PARTICIPANT UNIFICATION
-		/**
-		 * @var $ilDB ilDB
-		 *
-		 */
-		global $ilDB;
-
 		$xavc_members = array();
 
-		$res = $ilDB->queryf('
+		$res = $this->db->queryf('
 			SELECT * FROM rep_robj_xavc_members mem
 			INNER JOIN rep_robj_xavc_users usr
 			WHERE ref_id = %s
 			AND mem.user_id = usr.user_id',
 				array('integer'), array($this->getRefId()));
 
-		while($row = $ilDB->fetchAssoc($res))
+		while($row = $this->db->fetchAssoc($res))
 		{
 			$xavc_members[] = $row;
 		}
@@ -144,13 +131,7 @@ class ilXAVCMembers
 
 	public function insertXAVCMember()
 	{
-		/**
-		 * @var $ilDB ilDB
-		 *
-		 */
-		global $ilDB;
-		
-		$ilDB->insert('rep_robj_xavc_members', array(
+		$this->db->insert('rep_robj_xavc_members', array(
 			'user_id'	=> array('integer', $this->getUserId()),
 			'ref_id'	=> array('integer', $this->getRefId()),
 			'sco_id'	=> array('integer', $this->getScoId()),
@@ -169,11 +150,12 @@ class ilXAVCMembers
 
 	public static function deleteXAVCMember($a_user_id, $a_ref_id)
 	{
+		global $DIC;
+		
 		/**
-		 * @var $ilDB ilDB
-		 *
+		 * @var ilDB $ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		$ilDB->manipulateF('
 			DELETE FROM rep_robj_xavc_members
@@ -186,11 +168,12 @@ class ilXAVCMembers
 
 	public static function addXAVCUser($a_user_id, $a_xavc_login)
 	{
+		global $DIC;
+		
 		/**
-		 * @var $ilDB ilDB
-		 *
+		 * @var ilDB $ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 		
 		$check = $ilDB->queryF('SELECT * FROM rep_robj_xavc_users WHERE user_id = %s',
 							   array('integer'), array($a_user_id));
@@ -212,11 +195,12 @@ class ilXAVCMembers
 
 	public static function _lookupXAVCLogin($a_user_id)
 	{
+		global $DIC;
+		
 		/**
-		 * @var $ilDB ilDB
-		 *
+		 * @var ilDB $ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		$xavc_login = null;
 
@@ -232,11 +216,12 @@ class ilXAVCMembers
 
 	public static function _lookupUserId($a_xavc_login)
 	{
+		global $DIC;
+		
 		/**
-		 * @var $ilDB ilDB
-		 *
+		 * @var ilDB $ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		$user_id = null;
 
@@ -252,11 +237,12 @@ class ilXAVCMembers
 	
 	public static function _lookupStatus($a_user_id, $a_ref_id)
 	{
+		global $DIC;
+		
 		/**
-		 * @var $ilDB ilDB
-		 *
+		 * @var ilDB $ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 		
 		$xavc_status = null;
 
@@ -273,11 +259,12 @@ class ilXAVCMembers
 
 	public static function _isMember($a_user_id, $a_ref_id)
 	{
+		global $DIC;
+		
 		/**
-		 * @var $ilDB ilDB
-		 *
+		 * @var ilDB $ilDB
 		 */
-		global $ilDB;
+		$ilDB = $DIC->database();
 
 		$res = $ilDB->queryF('SELECT * FROM rep_robj_xavc_members
 			WHERE user_id = %s AND ref_id = %s',
@@ -291,7 +278,12 @@ class ilXAVCMembers
 	
 	public static function getMemberIds($ref_id)
 	{
-		global $ilDB;
+		global $DIC;
+		
+		/**
+		 * @var ilDB $ilDB
+		 */
+		$ilDB = $DIC->database();
 
 		$res = $ilDB->queryF('SELECT user_id FROM rep_robj_xavc_members WHERE ref_id = %s',
 			array('integer'), array($ref_id));

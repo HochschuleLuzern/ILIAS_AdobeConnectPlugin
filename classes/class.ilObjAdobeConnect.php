@@ -1751,7 +1751,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 			$a_obj_id
 		));
 		
-		$row = $this->db->fetchAssoc($res);
+		$row = $DIC->database()->fetchAssoc($res);
 		
 		return $row['sco_id'];
 	}
@@ -1812,6 +1812,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	 */
 	public function uploadFile($url, $filePath, $title = '')
 	{
+		global $DIC;
+		
 		if (function_exists('curl_file_create')) {
 			$curlFile = curl_file_create($filePath);
 		} else {
@@ -1836,8 +1838,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$postResult = curl_exec($curl);
 		curl_close($curl);
 		
-		$GLOBALS['ilLog']->write("AdobeConnect: addContent result ...");
-		$GLOBALS['ilLog']->write($postResult);
+		$DIC->logger()->write("AdobeConnect: addContent result ...");
+		$DIC->logger()->write($postResult);
 	}
 
 	/**

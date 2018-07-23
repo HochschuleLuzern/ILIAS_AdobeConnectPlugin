@@ -8,28 +8,43 @@ include_once dirname(__FILE__) . '/class.ilAdobeConnectXMLAPI.php';
  * Except add a user to a meeting in case of he access a meeting himself -> updateMeetingParticipantByTechnicalUser()
  *
  *
- * @author Nadia Ahmad <nahmad@databay.de>
+ * @author Nadia Matuschek <nmatuschek@databay.de>
  * @author Martin Studer <ms@studer-raimann.ch>
  */
 class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 {
 
 	protected static $technical_user_session = null;
+	
+	/**
+	 *
+	 * @var ilLogger $ilLog
+	 */
+	private $log;
+	
+	public function __construct() {
+		parent::__construct();
+		
+		global $DIC;
+		$this->log = $DIC->logger();
+	}
 
 	/**
 	 * Logs in user on Adobe Connect server. This is done by redirection to the cave server.
 	 * @ilObjUser $ilUser
-	 * @param null $user
-	 * @param null $pass
-	 * @param null $session
+	 * @param String $user
+	 * @param String $pass
+	 * @param String $session
 	 * @return String       Session id
 	 */
 	public function externalLogin($user = null, $pass = null, $session = null )
 	{
-		/*
-		 * @var $ilUser ilObjUser
+		global $DIC;
+		
+		/**
+		 * @var ilObjUser $ilUser
 		 */
-		global $ilUser;
+		$ilUser = $DIC->user();
 
 		self::$breeze_session = null;
 
@@ -65,6 +80,7 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	
 	/**
 	 * Check if user already has a breeze-session
+	 * 
 	 * @return String Session id or false if there is no session
 	 */
 	public function checkBreezeSession()
@@ -100,7 +116,13 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
      */
 	public function login($user='', $pass='', $session='')
 	{
-		global $lng, $ilLog;
+		global $DIC;
+		
+		/**
+		 * 
+		 * @var ilLanguage $lng
+		 */
+		$lng = $DIC->language();
 
 		if(null !== self::$technical_user_session)
 		{
@@ -123,7 +145,7 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $api_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, TRUE);
+        curl_setopt($ch, CURLOPT_HEADER, true);
 
         $output = curl_exec($ch);
         $curlHeaderSize=curl_getinfo($ch,CURLINFO_HEADER_SIZE);
@@ -139,7 +161,7 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
     }
 
 	/**
-	 *  Gets meeting or content URL
+	 * Gets meeting or content URL
 	 *
 	 * With SWITCHaai it's not possible to get the meeting url by folder_id! Because we have no permissions to do this!
 	 *
@@ -151,8 +173,6 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 */
     public function getURL($sco_id, $folder_id, $session, $type = 'default')
 	{
-		global $ilLog;
-
 		switch($type) {
 			case 'meeting':
 				$url = $this->getApiUrl(array(
@@ -172,8 +192,8 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 						}
 					}
 				}
-				$ilLog->write('AdobeConnect getURL Request: ' . $url);
-				$ilLog->write('AdobeConnect getURL Response: ' . $xml->asXML());
+				$this->log->write('AdobeConnect getURL Request: ' . $url);
+				$this->log->write('AdobeConnect getURL Response: ' . $xml->asXML());
 
 				return NULL;
 			break;
@@ -189,12 +209,10 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 * @param String $sco_id
 	 * @param String $folder_id
 	 * @param String $session
-	 * @return String                 Meeting start date, or NULL if something is wrong
+	 * @return String Meeting start date, or NULL if something is wrong
 	 */
 	public function getStartDate($sco_id, $folder_id, $session)
 	{
-		global $ilLog;
-
 		$url = $this->getApiUrl(array(
 			'action'  => 'report-my-meetings',
 			'session' => $session
@@ -215,8 +233,8 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		}
 		else
 		{
-			$ilLog->write('AdobeConnect getStartDate Request: '.$url);
-			$ilLog->write('AdobeConnect getStartDate Response: '.$xml->asXML());
+			$this->log->write('AdobeConnect getStartDate Request: '.$url);
+			$this->log->write('AdobeConnect getStartDate Response: '.$xml->asXML());
 
 			return NULL;
 		}
@@ -228,12 +246,10 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 * @param String $sco_id
 	 * @param String $folder_id
 	 * @param String $session
-	 * @return String                  Meeting start date, or NULL if something is wrong
+	 * @return String Meeting start date, or NULL if something is wrong
 	 */
 	public function getEndDate($sco_id, $folder_id, $session)
 	{
-		global $ilLog;
-
 		$url = $this->getApiUrl(array(
 			'action'  => 'report-my-meetings',
 			'session' => $session
@@ -254,8 +270,8 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		}
 		else
 		{
-			$ilLog->write('AdobeConnect getStartDate Request: '.$url);
-			$ilLog->write('AdobeConnect getStartDate Response: '.$xml->asXML());
+			$this->log->write('AdobeConnect getStartDate Request: '.$url);
+			$this->log->write('AdobeConnect getStartDate Response: '.$xml->asXML());
 
 			return NULL;
 		}
@@ -268,8 +284,6 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 */
 	public function getCurrentUserSwitchUserName()
 	{
-		global $ilLog;
-		
 		$session = $this->getBreezeSession();
 		
 		$url = $this->getApiUrl(array('action' => 'common-info', 'session' => $session));
@@ -288,10 +302,10 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		}
 		else
 		{
-			$ilLog->write('AdobeConnect getBreezeSession Request: '.$url);
+			$this->log->write('AdobeConnect getBreezeSession Request: '.$url);
 			if($xml)
 			{
-				$ilLog->write('AdobeConnect getBreezeSession Response: '.$xml->asXML());
+				$this->log->write('AdobeConnect getBreezeSession Response: '.$xml->asXML());
 			}
 			return NULL;
 		}
@@ -307,8 +321,6 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 	 */
 	public function updateMeetingParticipantByTechnicalUser($meeting_id, $login, $session, $permission)
 	{
-		global $ilLog;
-
 		$principal_id = $this->getPrincipalId($login, $session);
 
 		$technical_user_session = $this->login();

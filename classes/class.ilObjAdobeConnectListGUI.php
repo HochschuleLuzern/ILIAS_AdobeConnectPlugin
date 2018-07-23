@@ -71,13 +71,19 @@ class ilObjAdobeConnectListGUI extends ilObjectPluginListGUI{
 	 * insert all commands into html code
 	 *
 	 * @access	public
-	 * @param	boolean		$a_use_asynch			use_asynch
-	 * @param	boolean		$a_get_asynch_commands	get_asynch_commands
-	 * @param	string		$a_asynch_url			async url
+	 * @param	boolean	$a_use_asynch
+	 * @param	boolean	$a_get_asynch_commands
+	 * @param	string	$a_asynch_url
 	 */
 	public function insertCommands($a_use_asynch = false, $a_get_asynch_commands = false, $a_asynch_url = "", $a_header_actions = false)
 	{
-		global $ilUser;
+		global $DIC;
+		
+		/**
+		 * 
+		 * @var ilObjUser $ilUser
+		 */
+		$ilUser = $DIC->user();
 
 		/**
 		 *@var  $this->plugin ilPlugin
@@ -89,7 +95,7 @@ class ilObjAdobeConnectListGUI extends ilObjectPluginListGUI{
 			!ilObjAdobeConnectAccess::_hasAdminRole($ilUser->getId(), $this->ref_id)
 		)
 		{
-			/**
+			/*
 			 * $this->commands is initialized only once. appending the join-button
 			 * at this point will produce N buttons for the Nth item
 			*/
