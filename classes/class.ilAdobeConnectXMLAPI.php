@@ -83,7 +83,7 @@ class ilAdobeConnectXMLAPI
 		$this->x_user_id = $this->adcInfo->getXUserId();
 		$this->auth_mode = $this->adcInfo->getAuthMode();
 		
-		$this->logger = $DIC->logger();
+		$this->logger = $DIC->logger()->root();
 		$this->lng = $DIC->language();
 		
 		$this->proxy();

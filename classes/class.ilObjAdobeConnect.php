@@ -1838,8 +1838,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$postResult = curl_exec($curl);
 		curl_close($curl);
 		
-		$DIC->logger()->write("AdobeConnect: addContent result ...");
-		$DIC->logger()->write($postResult);
+		$DIC->logger()->root()->write("AdobeConnect: addContent result ...");
+		$DIC->logger()->root()->write($postResult);
 	}
 
 	/**

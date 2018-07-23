@@ -26,7 +26,7 @@ class ilSwitchAaiXMLAPI extends ilAdobeConnectXMLAPI
 		parent::__construct();
 		
 		global $DIC;
-		$this->log = $DIC->logger();
+		$this->log = $DIC->logger()->root();
 	}
 
 	/**
