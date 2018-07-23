@@ -339,7 +339,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 					ilUtil::sendSuccess($lng->txt('settings_saved'), true);
 					$ilCtrl->redirect($this, 'editAdobeSettings');
 				}
-				catch(ilException $e)
+				catch(Exception $e)
 				{
 					// rollback
 					foreach($params as $key => $val)
@@ -349,8 +349,14 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 					
 					ilAdobeConnectServer::_getInstance()->commitSettings();
 					
-					$this->form->getItemByPostVar('server')
-						   	   ->setAlert($this->getPluginObject()->txt($e->getMessage()));
+					$untranslatedError = '-' . $this->getPluginObject()->getPrefix() . '_' . $e->getMessage() . '-';
+					if ($this->getPluginObject()->txt($e->getMessage()) != $untranslatedError) {
+						$this->form->getItemByPostVar('server')
+						->setAlert($this->getPluginObject()->txt($e->getMessage()));
+					} else {
+						$this->form->getItemByPostVar('server')
+						->setAlert($e->getMessage());
+					}
 				}
 			}
 			else
@@ -563,10 +569,21 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$only_in_crs_or_grp->setInfo($this->pluginObj->txt('only_in_crs_or_grp_info'));
 		$this->form->addItem($only_in_crs_or_grp);
 		
-		if(count(self::$template_cache) == 0 || true)
-		{
+		try {
 			$xmlAPI = ilXMLApiFactory::getApiByAuthMode();
-			self::$template_cache = $xmlAPI->getTemplates($this->pluginObj);
+			$templateOptions = $xmlAPI->getTemplates($this->pluginObj);
+			
+			$use_meeting_template = new ilCheckboxInputGUI(
+				$this->pluginObj->txt('use_meeting_template'),
+				'use_meeting_template'
+				);
+			$use_meeting_template->setInfo($this->pluginObj->txt('use_meeting_template_info'));
+			$template_source = new ilSelectInputGUI('', 'template_sco_id');
+			$template_source->setOptions($templateOptions);
+			
+			$use_meeting_template->addSubItem($template_source);
+			$this->form->addItem($use_meeting_template);
+		} catch (\Exception $e) {
 		}
 		
 		$use_meeting_template = new ilCheckboxInputGUI($this->pluginObj->txt('use_meeting_template'), 'use_meeting_template');
