@@ -72,8 +72,12 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 	*/
 	protected function afterConstructor()
 	{
+		global $DIC;
 		$this->pluginObj = ilPlugin::getPluginObject('Services', 'Repository', 'robj', 'AdobeConnect');
         $this->form = new ilPropertyFormGUI();
+        
+        $this->rbacreview = $DIC->rbac()->review();
+        $this->rbacsystem = $DIC->rbac()->system();
 
 		if(is_object($this->object))
 		{
