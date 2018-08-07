@@ -13,6 +13,8 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 	 */
 	public function __construct($a_parent_obj, $a_parent_cmd)
 	{
+		parent::__construct($a_parent_obj, $a_parent_cmd);
+		
 		$this->tpl->addJavascript("./Customizing/global/plugins/Services/Repository/RepositoryObject/AdobeConnect/templates/js/plugin.js");
 
 		$this->setId('xavc_participants');
@@ -22,8 +24,6 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 		$this->setExternalSorting(false);
 		$this->setExternalSegmentation(false);
 		$this->pluginObj = ilPlugin::getPluginObject('Services', 'Repository', 'robj', 'AdobeConnect');
-
-		parent::__construct($a_parent_obj, $a_parent_cmd);
 
 		$this->setEnableNumInfo(true);
 

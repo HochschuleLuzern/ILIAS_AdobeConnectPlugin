@@ -1500,7 +1500,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 	{
 		$session = $this->getSession();
 		
-		if ($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session)) {
+		if ($session != NULL && $this->xmlApi->login($this->adminLogin, $this->adminPass, $session) && $this->xmlApi->isParticipant($this->adminLogin, $this->sco_id, $session)) {
 			return $this->xmlApi->getMeetingsParticipants($this->sco_id, $session);
 		} else {
 			return NULL;
