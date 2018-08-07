@@ -1251,12 +1251,13 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 	public function showMembersGallery()
 	{
-		$this->pluginObj->includeClass('class.ilAdobeConnectUsersGalleryCollectionProvider.php');
+		include_once './Services/User/classes/class.ilUsersGalleryGUI.php';
+		$this->pluginObj->includeClass('class.ilAdobeConnectGalleryUsers.php');
 		$this->tabs->activateTab('participants');
 		$this->__setSubTabs('participants');
 		$this->tabs->activateSubTab("showMembersGallery");
 
-		$provider    = new ilAdobeConnectUsersGalleryCollectionProvider(ilAdobeConnectContainerParticipants::getInstanceByObjId($this->object->getId()));
+		$provider = new ilAdobeConnectGalleryUsers();
 		$gallery_gui = new ilUsersGalleryGUI($provider);
 		$this->ctrl->setCmd('view');
 		$gallery_gui->executeCommand();
@@ -2833,10 +2834,6 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 						$serverConfig = ilAdobeConnectServer::_getInstance();
 						$minTime       = new ilDateTime(time() + $serverConfig->getScheduleLeadTime() * 60 * 60, IL_CAL_UNIX);
 
-						if ($form->getInput('time_type_selection') == 'permanent_room') {
-							$form->getItemByPostVar("start_date")->checkInput();
-						}
-
 						$newStartDate  = $form->getItemByPostVar("start_date")->getDate();
 
 						$time_mismatch = false;
@@ -2853,10 +2850,10 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 					{
 						if($durationValid)
 						{
-                            $location = $objDefinition->getLocation($new_type);
+                            $location = $this->objDefinition->getLocation($new_type);
 
 							// create and insert object in objecttree
-							$class_name = "ilObj" . $objDefinition->getClassName($new_type);
+							$class_name = "ilObj" . $this->objDefinition->getClassName($new_type);
 							include_once($location . "/class." . $class_name . ".php");
 							
 							/**
