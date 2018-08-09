@@ -234,6 +234,8 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		$this->ctrl = $DIC->ctrl();
 		$this->lng = $DIC->language();
 		$this->user = $DIC->user();
+		$this->rbacreview = $DIC->rbac()->review();
+		$this->rbacadmin = $DIC->rbac()->admin();
 		
 		$this->ref_id = $a_ref_id;
 		$this->pluginObj = ilPlugin::getPluginObject('Services', 'Repository', 'robj', 'AdobeConnect');
