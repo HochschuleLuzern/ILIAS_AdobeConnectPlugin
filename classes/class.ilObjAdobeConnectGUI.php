@@ -2868,7 +2868,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 							$newObj->createReference();
 							$newObj->putInTree($_GET["ref_id"]);
 							$newObj->setPermissions($_GET["ref_id"]);
-							ilUtil::sendSuccess($lng->txt("msg_obj_modified"), true);
+							ilUtil::sendSuccess($this->lng->txt("msg_obj_modified"), true);
 							$this->afterSave($newObj);
 							return;
 						}
