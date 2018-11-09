@@ -410,6 +410,11 @@ class ilAdobeConnectServer
 	    
 	    return $available_langs;
 	}
+	
+	public static function getDefaultLang() {
+		$langs = explode(',', self::getSetting('langs'));
+		return $langs[0];
+	}
 
 
 	public static function getPresentationUrl($api_call = false)
