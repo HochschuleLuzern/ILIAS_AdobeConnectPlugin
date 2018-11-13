@@ -2769,7 +2769,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 					$newObj->createReference();
 					$newObj->putInTree($_GET["ref_id"]);
 					$newObj->setPermissions($_GET["ref_id"]);
-					ilUtil::sendSuccess($lng->txt("msg_obj_modified"), true);
+					ilUtil::sendSuccess($this->lng->txt("msg_obj_modified"), true);
 					$this->afterSave($newObj);
 					return;
 				}
@@ -2834,7 +2834,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 						$serverConfig = ilAdobeConnectServer::_getInstance();
 						$minTime       = new ilDateTime(time() + $serverConfig->getScheduleLeadTime() * 60 * 60, IL_CAL_UNIX);
 
-						$newStartDate  = $form->getItemByPostVar("start_date")->getDate();
+						$newStartDate = $_POST["start_date"] = $form->getItemByPostVar("start_date")->getDate();
 
 						$time_mismatch = false;
 						if(ilDateTime::_before($newStartDate, $minTime) && $form->getInput('time_type_selection') != 'permanent_room')
