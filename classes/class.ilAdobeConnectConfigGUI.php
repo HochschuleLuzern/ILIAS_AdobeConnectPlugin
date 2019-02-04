@@ -211,7 +211,7 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 		$values['server'] = ilAdobeConnectServer::getSetting('server') ? ilAdobeConnectServer::getSetting('server') : '';
 		$values['port'] = ilAdobeConnectServer::getSetting('port')? ilAdobeConnectServer::getSetting('port') : '';
 		$values['login'] = ilAdobeConnectServer::getSetting('login') ? ilAdobeConnectServer::getSetting('login') : '';
-		$values['password'] = ilAdobeConnectServer::getSetting('password')? ilAdobeConnectServer::getSetting('password') : '';
+		$values['password'] = ilAdobeConnectServer::getSetting('password') ? '(__unchanged__)' : '';
 		$values['cave'] = ilAdobeConnectServer::getSetting('cave')? ilAdobeConnectServer::getSetting('cave') : '';
 		$values['schedule_lead_time'] = ilAdobeConnectServer::getSetting('schedule_lead_time')? ilAdobeConnectServer::getSetting('schedule_lead_time') : 0;
 		$values['langs'] = ilAdobeConnectServer::getSetting('langs')? ilAdobeConnectServer::getSetting('langs') : 'en';
@@ -304,7 +304,11 @@ class ilAdobeConnectConfigGUI extends ilPluginConfigGUI implements AdobeConnectP
 					{
 						$value = substr($value, 0, -1);
 					}
-					ilAdobeConnectServer::setSetting($key, trim($value));
+					
+					if ($key == 'password' && $value == '(__unchanged__)') {
+						$value = ilAdobeConnectServer::getSetting('password');
+					}
+ 					ilAdobeConnectServer::setSetting($key, trim($value));
 				}
 				ilAdobeConnectServer::setSetting('auth_mode_switchaai_account_type',serialize($this->form->getInput('auth_mode_switchaai_account_type')));
 
