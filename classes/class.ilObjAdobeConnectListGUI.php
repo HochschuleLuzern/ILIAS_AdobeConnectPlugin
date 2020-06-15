@@ -40,7 +40,7 @@ class ilObjAdobeConnectListGUI extends ilObjectPluginListGUI{
 	*/
 	function initCommands()
 	{
-		if(strtolower($_GET['baseClass']) != 'ilpersonaldesktopgui')
+		if(strtolower($_GET['baseClass']) != 'ildashboardgui')
 		{
 			$this->link_enabled = true;
 		}
