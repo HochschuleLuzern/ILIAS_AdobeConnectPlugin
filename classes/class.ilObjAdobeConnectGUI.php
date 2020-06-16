@@ -214,7 +214,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 		if(ilAdobeConnectServer::getSetting('add_to_desktop') == 1)
 		{
-			ilObjUser::_addDesktopItem($this->user->getId(), $this->object->getRefId(), 'xavc');
+            $fav_manager = new ilFavouritesManager();
+            $fav_manager->add($this->user->getId(), $this->object->getRefId());
 		}
 
 		$this->object->addCrsGrpMembers($this->object->getRefId(), $this->object->getScoId());
@@ -1251,7 +1252,6 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 	public function showMembersGallery()
 	{
-		include_once './Services/User/classes/class.ilUsersGalleryGUI.php';
 		$this->pluginObj->includeClass('class.ilAdobeConnectGalleryUsers.php');
 		$this->tabs->activateTab('participants');
 		$this->__setSubTabs('participants');
@@ -1463,7 +1463,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 
 		if(ilAdobeConnectServer::getSetting('add_to_desktop') == 1)
 		{
-			ilObjUser::_addDesktopItem($user_id, $this->object->getRefId(), 'xavc');
+            $fav_manager = new ilFavouritesManager();
+            $fav_manager->add($user_id, $this->object->getRefId());
 		}
 
 		$this->ctrl->setParameter($this, 'cmd', 'showContent');
@@ -1674,7 +1675,8 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		// add to desktop
 		if(ilAdobeConnectServer::getSetting('add_to_desktop') == 1)
 		{
-			ilObjUser::_addDesktopItem($a_user_id, $this->object->getRefId(), 'xavc');
+            $fav_manager = new ilFavouritesManager();
+            $fav_manager->add($a_user_id, $this->object->getRefId());
 		}
 		$is_member = ilXAVCMembers::_isMember($a_user_id, $this->object->getRefId());
 
@@ -3391,6 +3393,5 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 		$this->tpl->setContent($info->getHTML().$this->getPerformTriggerHtml());
 
 		$this->tpl->setPermanentLink('xavc', $this->object->getRefId());
-		$this->tpl->addILIASFooter();
 	}
 }

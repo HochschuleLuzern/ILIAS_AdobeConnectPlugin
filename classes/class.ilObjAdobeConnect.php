@@ -1887,7 +1887,7 @@ class ilObjAdobeConnect extends ilObjectPlugin
 		
 		if ($forceUser == true || $settings->getAuthMode() != ilAdobeConnectServer::AUTH_MODE_SWITCHAAI) {
 			$session = $this->xmlApi->getBreezeSession();
-		} else if (! forceAdmin) {
+		} else if (! $forceAdmin) {
 			$session = $this->xmlApi->checkBreezeSession();
 		}
 		

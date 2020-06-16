@@ -13,9 +13,10 @@ class ilXAVCParticipantsTableGUI extends ilAdobeConnectTableGUI
 	 */
 	public function __construct($a_parent_obj, $a_parent_cmd)
 	{
+        global $DIC;
+
 		parent::__construct($a_parent_obj, $a_parent_cmd);
-		
-		$this->tpl->addJavascript("./Customizing/global/plugins/Services/Repository/RepositoryObject/AdobeConnect/templates/js/plugin.js");
+		$DIC->ui()->mainTemplate()->addJavaScript("./Customizing/global/plugins/Services/Repository/RepositoryObject/AdobeConnect/templates/js/plugin.js");
 
 		$this->setId('xavc_participants');
 
