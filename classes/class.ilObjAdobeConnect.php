@@ -915,7 +915,9 @@ class ilObjAdobeConnect extends ilObjectPlugin
 				"minutes" => $minutes
 			);
 			
-			$this->setCurrentPax($this->xmlApi->getCurrentPax($this->sco_id, $session));
+			if ($this->xmlApi->isActiveSco($session, $this->sco_id))  {
+    			$this->setCurrentPax($this->xmlApi->getCurrentPax($this->sco_id, $session));
+			}
 			
 			if (! $this->getMeetingLang()) {
 				$this->meeting_lang = $this->xmlApi->getMeetingLang($this->sco_id, $session);

@@ -230,7 +230,9 @@ class ilXAVCMembers
 
 		while($row = $ilDB->fetchAssoc($res))
 		{
-			$user_id = $row['user_id'];
+		    if (ilObjUser::userExists([$row['user_id']])) {
+    			$user_id = $row['user_id'];
+		    }
 		}
 		return $user_id;
 	}
