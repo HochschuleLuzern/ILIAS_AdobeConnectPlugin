@@ -3269,7 +3269,7 @@ class ilObjAdobeConnectGUI extends ilObjectPluginGUI implements AdobeConnectPerm
 						$href = $this->txt("meeting_not_available_no_slots");
 						$button_disabled = true;
 					}
-					else if (!$xavcRoles->isAdministrator($this->user->getId()) && count($current_pax = $this->object->getCurrentPax()) > $this->object->getMaxPax() 
+					else if (!$xavcRoles->isAdministrator($this->user->getId()) && ($current_pax =  $this->object->getCurrentPax()) != null && count($current_pax) > $this->object->getMaxPax() 
 						&& !in_array($this->object->getPrincipalId($xavc_login), $current_pax))
 					{
 						$href = $this->txt("meeting_full");
